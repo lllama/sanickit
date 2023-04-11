@@ -4,6 +4,9 @@ from bs4 import BeautifulSoup as BS
 from importlib.util import find_spec
 from contextlib import chdir
 from jinja2 import Environment, BaseLoader
+from watchfiles import watch
+
+from multiprocessing import Process
 
 import subprocess
 from pathlib import Path
@@ -41,12 +44,14 @@ ENDPOINT_TEMPLATE = jinja_env.from_string(
 )
 
 
-def _build():
+def _build(restart=False):
     base = Path("test")
     src = base / "src"
 
     build_root = Path("build")
-    shutil.rmtree(build_root, ignore_errors=True)
+
+    if not restart:
+        shutil.rmtree(build_root, ignore_errors=True)
 
     build = build_root / "app"
     build.mkdir(exist_ok=True, parents=True)
@@ -110,11 +115,24 @@ def build():
     _build()
 
 
+def watch_files():
+    try:
+        for change in watch(Path("test")):
+            _build(restart=True)
+    except KeyboardInterrupt:
+        pass
+
+
 @cli.command
 def run():
     _build()
-    with chdir(Path("build")):
-        proc = subprocess.run(["sanic", "app.server:create_app", "--debug", "--dev"], check=True)
+    file_watcher = Process(target=watch_files)
+    file_watcher.start()
+    try:
+        with chdir(Path("build")):
+            proc = subprocess.run(["sanic", "app.server:create_app", "--debug", "--dev"], check=True)
+    except KeyboardInterrupt:
+        file_watcher.close()
 
 
 if __name__ == "__main__":

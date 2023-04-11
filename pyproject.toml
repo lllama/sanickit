@@ -24,7 +24,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["sanic", "sanic-ext", "jinja2", "copier", "click", "copier", "rich","beautifulsoup4"]
+dependencies = ["sanic", "sanic-ext", "jinja2", "copier", "click", "copier", "rich","beautifulsoup4", "watchfiles"]
 
 [project.scripts]
 sk = "sanic_kit.cli:cli"
