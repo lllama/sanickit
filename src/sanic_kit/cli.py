@@ -30,7 +30,11 @@ def new(ctx: click.Context, path: Path):
         ctx.exit()
 
     print(f"[green]Creating app in [yellow]{path}")
+
     run_auto("templates/default", path)
+
+    for route in path.glob("**/.gitkeep"):
+        route.unlink()
 
 
 jinja_env = Environment(loader=BaseLoader())
