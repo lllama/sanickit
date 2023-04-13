@@ -1,4 +1,7 @@
+from textwrap import dedent
+
 import os
+from .code import extract_imports
 
 from bs4 import BeautifulSoup as BS
 from importlib.util import find_spec
@@ -41,9 +44,12 @@ jinja_env = Environment(loader=BaseLoader())
 
 ENDPOINT_TEMPLATE = jinja_env.from_string(
     """
+{% for import in imports %}
+{{ import -}}
+{% endfor %}
+
 @bp.get("{{route}}", name="{{name}}")
 {{code}}
-    return await render("{{template}}", context=locals())
 """
 )
 
@@ -91,11 +97,14 @@ bp = Blueprint("app")
 
         html = BS(route.read_text(), "html.parser")
         if script := html.find("script"):
-            python = script.extract().text.lstrip()
+            name = str(route.relative_to(src / "routes").parent).replace(os.sep, "_").replace(".", "index")
+            python = dedent(script.extract().text)
+            imports, python = extract_imports(python, name, template_name)
             # Create the code
             app_blueprint += ENDPOINT_TEMPLATE.render(
+                imports=imports,
                 route=str(route.relative_to(src / "routes").parent).replace(os.sep, "/").replace(".", "/"),
-                name=str(route.relative_to(src / "routes").parent).replace(os.sep, "_").replace(".", "index"),
+                name=name,
                 template=template_name,
                 code=python,
             )
