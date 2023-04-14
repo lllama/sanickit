@@ -9,6 +9,7 @@ class FunctionAdder(ast.NodeTransformer):
         super().__init__(*args, **kwargs)
         self.function_name = name
         self.parameters = parameters
+        self.template = template
         self.new_return = ast.parse(f"""return await render("{template}", context=locals())""")
         self.extracted_imports = []
 
@@ -26,10 +27,10 @@ class FunctionAdder(ast.NodeTransformer):
             decorator_list=[],
             args=ast.arguments(
                 posonlyargs=[],
-                kwonlyargs=[],
                 defaults=[],
-                kw_defaults=[],
                 args=[ast.arg(arg="request")] + [ast.arg(arg=param) for param in self.parameters],
+                kwonlyargs=[ast.arg(arg="TEMPLATE")],
+                kw_defaults=[ast.Constant(value=self.template)],
             ),
         )
         wrapper.body = node.body
