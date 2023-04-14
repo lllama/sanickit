@@ -17,6 +17,7 @@ from copier import run_auto
 import shutil
 import click
 from rich import print
+from rich.markup import escape
 
 
 @click.group()
@@ -87,7 +88,7 @@ bp = Blueprint("app")
 """
 
     for route in (src / "routes").glob("**/*.sanic"):
-        print(route)
+        print(f"[green]Processing: [yellow]{escape(str(route))}")
         (build / route.parent).mkdir(parents=True, exist_ok=True)
         # (templates / route.parent).mkdir(parents=True, exist_ok=True)
 
@@ -97,13 +98,28 @@ bp = Blueprint("app")
 
         html = BS(route.read_text(), "html.parser")
         if script := html.find("script"):
-            name = str(route.relative_to(src / "routes").parent).replace(os.sep, "_").replace(".", "index")
+            parameters = [x[1:-1] for x in route.parts if x.startswith("[") and x.endswith("]")]
+            route_url = (
+                str(route.relative_to(src / "routes").parent)
+                .replace(os.sep, "/")
+                .replace(".", "/")
+                .replace('[', '<')
+                .replace(']', '>')
+            )
+
+            name = (
+                str(route.relative_to(src / "routes").parent)
+                .replace(os.sep, "_")
+                .replace(".", "index")
+                .replace('[', '')
+                .replace(']', '')
+            )
             python = dedent(script.extract().text)
-            imports, python = extract_imports(python, name, template_name)
+            imports, python = extract_imports(python, name, template_name, parameters)
             # Create the code
             app_blueprint += ENDPOINT_TEMPLATE.render(
                 imports=imports,
-                route=str(route.relative_to(src / "routes").parent).replace(os.sep, "/").replace(".", "/"),
+                route=route_url,
                 name=name,
                 template=template_name,
                 code=python,

@@ -5,9 +5,10 @@ from rich import print
 class FunctionAdder(ast.NodeTransformer):
     """Makes our bare files into functions"""
 
-    def __init__(self, name, template, *args, **kwargs):
+    def __init__(self, name, template, parameters, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.function_name = name
+        self.parameters = parameters
         self.new_return = ast.parse(f"""return await render("{template}", context=locals())""")
         self.extracted_imports = []
 
@@ -28,7 +29,7 @@ class FunctionAdder(ast.NodeTransformer):
                 kwonlyargs=[],
                 defaults=[],
                 kw_defaults=[],
-                args=[ast.arg(arg="request")],
+                args=[ast.arg(arg="request")] + [ast.arg(arg=param) for param in self.parameters],
             ),
         )
         wrapper.body = node.body
@@ -38,8 +39,8 @@ class FunctionAdder(ast.NodeTransformer):
         return node
 
 
-def extract_imports(code, name, template_name):
+def extract_imports(code, name, template_name, parameters):
     tree = ast.parse(code)
-    transformer = FunctionAdder(name, template_name)
+    transformer = FunctionAdder(name, template_name, parameters)
     new_function_tree = transformer.visit(tree)
     return transformer.extracted_imports, ast.unparse(new_function_tree)
