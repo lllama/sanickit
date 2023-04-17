@@ -54,6 +54,42 @@ ENDPOINT_TEMPLATE = jinja_env.from_string(
 """
 )
 
+def handle_page(src, route, templates, template_name):
+
+    html = BS(route.read_text(), "html.parser")
+
+    (templates / template_name).write_text(
+        """{% extends "test_src_routes_+layout.html" %}\n\n""" + html.prettify()
+    )
+
+    if script := html.find("handler"):
+        parameters = [x[1:-1] for x in route.parts if x.startswith("[") and x.endswith("]")]
+        route_url = (
+            str(route.relative_to(src / "routes").parent)
+            .replace(os.sep, "/")
+            .replace(".", "/")
+            .replace('[', '<')
+            .replace(']', '>')
+        )
+
+        name = (
+            str(route.relative_to(src / "routes").parent)
+            .replace(os.sep, "_")
+            .replace(".", "index")
+            .replace('[', '')
+            .replace(']', '')
+        )
+        python = dedent(script.extract().text)
+        imports, python = extract_imports(python, name, template_name, parameters)
+        # Create the code
+        return ENDPOINT_TEMPLATE.render(
+            imports=imports,
+            route=route_url,
+            name=name,
+            template=template_name,
+            code=python,
+        )
+
 
 def _build(restart=False):
     base = Path("test")
@@ -90,48 +126,16 @@ bp = Blueprint("app")
     for route in (src / "routes").glob("**/*.sanic"):
         print(f"[green]Processing: [yellow]{escape(str(route))}")
         (build / route.parent).mkdir(parents=True, exist_ok=True)
-        # (templates / route.parent).mkdir(parents=True, exist_ok=True)
 
-        shutil.copy(route, build / route)
+        # shutil.copy(route, build / route)
 
         template_name = f"{str(route.with_suffix('')).replace(os.sep, '_')}.html"
-
-        html = BS(route.read_text(), "html.parser")
-        if script := html.find("handler"):
-            parameters = [x[1:-1] for x in route.parts if x.startswith("[") and x.endswith("]")]
-            route_url = (
-                str(route.relative_to(src / "routes").parent)
-                .replace(os.sep, "/")
-                .replace(".", "/")
-                .replace('[', '<')
-                .replace(']', '>')
-            )
-
-            name = (
-                str(route.relative_to(src / "routes").parent)
-                .replace(os.sep, "_")
-                .replace(".", "index")
-                .replace('[', '')
-                .replace(']', '')
-            )
-            python = dedent(script.extract().text)
-            imports, python = extract_imports(python, name, template_name, parameters)
-            # Create the code
-            app_blueprint += ENDPOINT_TEMPLATE.render(
-                imports=imports,
-                route=route_url,
-                name=name,
-                template=template_name,
-                code=python,
-            )
-
         # Create our template
         match route.stem:
             case "+page":
-                (templates / template_name).write_text(
-                    """{% extends "test_src_routes_+layout.html" %}\n\n""" + html.prettify()
-                )
+                app_blueprint += handle_page(src, route, templates, template_name)
             case "+layout":
+                html = BS(route.read_text(), "html.parser")
                 (templates / template_name).write_text("""{% extends "index.html" %}\n\n""" + html.prettify())
 
     (build / "blueprints" / "app.py").write_text(app_blueprint)
