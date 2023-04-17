@@ -97,7 +97,7 @@ bp = Blueprint("app")
         template_name = f"{str(route.with_suffix('')).replace(os.sep, '_')}.html"
 
         html = BS(route.read_text(), "html.parser")
-        if script := html.find("script"):
+        if script := html.find("handler"):
             parameters = [x[1:-1] for x in route.parts if x.startswith("[") and x.endswith("]")]
             route_url = (
                 str(route.relative_to(src / "routes").parent)
