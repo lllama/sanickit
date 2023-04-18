@@ -1,7 +1,7 @@
 from textwrap import dedent
 
 import os
-from .code import extract_imports
+from .code import extract_imports, extract_api
 
 from bs4 import BeautifulSoup as BS
 from importlib.util import find_spec
@@ -49,18 +49,50 @@ ENDPOINT_TEMPLATE = jinja_env.from_string(
 {{ import -}}
 {% endfor %}
 
-@bp.get("{{route}}", name="{{name}}")
+@bp.{{method|lower}}("{{route}}", name="{{name}}")
 {{code}}
 """
 )
 
-def handle_page(src, route, templates, template_name):
 
+def handle_server(src, route, template_name):
+    parameters = [x[1:-1] for x in route.parts if x.startswith("[") and x.endswith("]")]
+    route_url = (
+        str(route.relative_to(src / "routes").parent)
+        .replace(os.sep, "/")
+        .replace(".", "/")
+        .replace("[", "<")
+        .replace("]", ">")
+    )
+
+    name = (
+        str(route.relative_to(src / "routes").parent)
+        .replace(os.sep, "_")
+        .replace(".", "index")
+        .replace("[", "")
+        .replace("]", "")
+    )
+    imports, handlers = extract_api(route, name, template_name, parameters)
+    # Create the code
+    code = [
+        ENDPOINT_TEMPLATE.render(
+            imports=imports,
+            route=route_url,
+            name=handler.name,
+            method=handler.method,
+            template=template_name,
+            code=handler.code,
+        )
+        for handler in handlers
+    ]
+
+    return '\n'.join(code)
+
+
+def handle_page(src, route, templates, template_name):
     html = BS(route.read_text(), "html.parser")
 
-    (templates / template_name).write_text(
-        """{% extends "test_src_routes_+layout.html" %}\n\n""" + html.prettify()
-    )
+    (templates / template_name).write_text("""{% extends "test_src_routes_+layout.html" %}\n\n""" + html.prettify())
 
     if script := html.find("handler"):
         parameters = [x[1:-1] for x in route.parts if x.startswith("[") and x.endswith("]")]
@@ -68,16 +100,16 @@ def handle_page(src, route, templates, template_name):
             str(route.relative_to(src / "routes").parent)
             .replace(os.sep, "/")
             .replace(".", "/")
-            .replace('[', '<')
-            .replace(']', '>')
+            .replace("[", "<")
+            .replace("]", ">")
         )
 
         name = (
             str(route.relative_to(src / "routes").parent)
             .replace(os.sep, "_")
             .replace(".", "index")
-            .replace('[', '')
-            .replace(']', '')
+            .replace("[", "")
+            .replace("]", "")
         )
         python = dedent(script.extract().text)
         imports, python = extract_imports(python, name, template_name, parameters)
@@ -86,6 +118,7 @@ def handle_page(src, route, templates, template_name):
             imports=imports,
             route=route_url,
             name=name,
+            method="get",
             template=template_name,
             code=python,
         )
@@ -123,7 +156,7 @@ bp = Blueprint("app")
 
 """
 
-    for route in (src / "routes").glob("**/*.sanic"):
+    for route in (src / "routes").glob("**/*"):
         print(f"[green]Processing: [yellow]{escape(str(route))}")
         (build / route.parent).mkdir(parents=True, exist_ok=True)
 
@@ -131,10 +164,12 @@ bp = Blueprint("app")
 
         template_name = f"{str(route.with_suffix('')).replace(os.sep, '_')}.html"
         # Create our template
-        match route.stem:
-            case "+page":
+        match route.name:
+            case "+page.sanic":
                 app_blueprint += handle_page(src, route, templates, template_name)
-            case "+layout":
+            case "+server.py":
+                app_blueprint += handle_server(src, route, template_name)
+            case "+layout.sanic":
                 html = BS(route.read_text(), "html.parser")
                 (templates / template_name).write_text("""{% extends "index.html" %}\n\n""" + html.prettify())
 
