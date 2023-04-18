@@ -7,7 +7,7 @@ name = "sanic-kit"
 dynamic = ["version"]
 description = 'A web framework that applies some of the idea of SvelteKit to Sanic'
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 license = "MIT"
 keywords = []
 authors = [
@@ -81,7 +81,7 @@ all = [
 ]
 
 [tool.black]
-target-version = ["py37"]
+target-version = ["py310"]
 line-length = 120
 skip-string-normalization = true
 
@@ -158,3 +158,4 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
