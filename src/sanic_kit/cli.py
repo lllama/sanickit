@@ -141,6 +141,7 @@ def _build(restart=False):
     (build / "blueprints").mkdir(exist_ok=True)
     (build / "blueprints" / "__init__.py").touch()
     (build / "middleware").mkdir(exist_ok=True)
+    (build / "static").mkdir(exist_ok=True)
     templates = build_root / "templates"
     templates.mkdir(exist_ok=True)
 
@@ -176,6 +177,9 @@ bp = Blueprint("app")
     (build / "blueprints" / "app.py").write_text(app_blueprint)
 
     shutil.copy(src / "index.html", templates)
+
+    shutil.copytree(base /"static", build / "static", dirs_exist_ok=True)
+
 
 
 @cli.command

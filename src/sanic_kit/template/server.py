@@ -36,6 +36,7 @@ def create_app(module_names: Optional[Sequence[str]] = None) -> Sanic:
         module_names = DEFAULT
 
     app = Sanic("BooktrackerApp")
+    app.static("/static/", Path(__file__).parent / "static")
     # app = Sanic("BooktrackerApp", request_class=BooktrackerRequest)
     # app.config.UI_DIR = Path(__file__).parent.parent / "ui"
     # app.config.CORS_ORIGINS = "http://localhost:7777" if app.config.LOCAL else "https://sanicbook.com"
