@@ -158,7 +158,7 @@ bp = Blueprint("app")
 
     for route in (src / "routes").glob("**/*"):
         print(f"[green]Processing: [yellow]{escape(str(route))}")
-        (build / route.parent).mkdir(parents=True, exist_ok=True)
+        # (build / route.parent).mkdir(parents=True, exist_ok=True)
 
         # shutil.copy(route, build / route)
 
