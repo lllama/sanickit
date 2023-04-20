@@ -35,7 +35,7 @@ def new(ctx: click.Context, path: Path):
 
     print(f"[green]Creating app in [yellow]{path}")
 
-    run_auto("templates/default", path)
+    run_auto(str(Path(__file__).parent.parent.parent / "templates" / "default"), path)
 
     for route in path.glob("**/.gitkeep"):
         route.unlink()
