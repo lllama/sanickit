@@ -11,26 +11,36 @@ class APIHandler:
     code: str
 
 
-class APIExtract(ast.NodeTransformer):
+class Extractor(ast.NodeTransformer):
     """Makes our bare files into functions"""
-
     def __init__(self, name, template_name, parameters, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = name
         self.parameters = parameters
         self.template = template_name
-        self.extracted_imports = set()
-        self.handlers = []
+        self._extracted_imports = set()
 
+    @property
+    def extracted_imports(self):
+        return self._extracted_imports
+        
     def visit_Import(self, node):
-        self.extracted_imports.add(ast.unparse(node))
+        self._extracted_imports.add(ast.unparse(node))
 
     def visit_ImportFrom(self, node):
-        self.extracted_imports.add(ast.unparse(node))
+        self._extracted_imports.add(ast.unparse(node))
 
     def visit_FunctionDef(self, node):
         print(f"[red bold]Non-async handler detected: {node.name}")
         sys.exit()
+
+
+class APIExtract(Extractor):
+    """Makes our bare files into functions"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.handlers = []
 
     def visit_AsyncFunctionDef(self, node):
         super().generic_visit(node)
@@ -55,28 +65,18 @@ class APIExtract(ast.NodeTransformer):
         return node
 
 
-class FunctionAdder(ast.NodeTransformer):
+class FunctionAdder(Extractor):
     """Makes our bare files into functions"""
 
-    def __init__(self, name, template, parameters, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.function_name = name
-        self.parameters = parameters
-        self.template = template
-        self.new_return = ast.parse(f"""return await render("{template}", context=locals())""")
-        self.extracted_imports = set()
-
-    def visit_Import(self, node):
-        self.extracted_imports.add(ast.unparse(node))
-
-    def visit_ImportFrom(self, node):
-        self.extracted_imports.add(ast.unparse(node))
+    def __init__(self, name, template_name, parameters, *args, **kwargs):
+        super().__init__(name, template_name, parameters)
+        self.new_return = ast.parse(f"""return await render("{template_name}", context=locals())""")
 
     def visit_Module(self, node):
         super().generic_visit(node)
 
         wrapper = ast.AsyncFunctionDef(
-            name=self.function_name,
+            name=self.name,
             decorator_list=[],
             args=ast.arguments(
                 posonlyargs=[],
@@ -103,5 +103,5 @@ def extract_imports(code, name, template_name, parameters):
 def extract_api(source_file, name, template_name, parameters):
     tree = ast.parse(source_file.read_text())
     transformer = APIExtract(name, template_name, parameters)
-    new_function_tree = transformer.visit(tree)
+    transformer.visit(tree)
     return transformer.extracted_imports, transformer.handlers
