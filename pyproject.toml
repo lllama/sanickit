@@ -24,7 +24,8 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["sanic", "sanic-ext", "jinja2", "copier", "click", "copier", "rich","beautifulsoup4", "watchfiles"]
+dependencies = ["sanic", "sanic-ext", "jinja2", "copier", "click", "copier",
+"rich","beautifulsoup4", "watchfiles", "tomlkit"]
 
 [project.scripts]
 sk = "sanic_kit.cli:cli"
@@ -83,7 +84,6 @@ all = [
 [tool.black]
 target-version = ["py310"]
 line-length = 120
-skip-string-normalization = true
 
 [tool.ruff]
 target-version = "py37"
