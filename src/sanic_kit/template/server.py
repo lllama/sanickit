@@ -2,24 +2,24 @@ from pathlib import Path
 from typing import Optional, Sequence, Tuple
 
 from sanic import Sanic
+
 from .blueprints.app import bp as app_bp
 
 # Modules imported here should NOT have a Sanic.get_app() call in the global
 # scope. Doing so will cause a circular import. Therefore, we progromatically
 # import those modules inside of the create_app() factory.
-# from booktracker.common.auth.startup import setup_auth
-# from booktracker.common.csrf import setup_csrf
-# from booktracker.common.log import setup_logging
-# from booktracker.common.pagination import setup_pagination
-# from booktracker.worker.module import setup_modules
-# from booktracker.worker.request import BooktrackerRequest
+# from app.common.auth.startup import setup_auth
+# from app.common.csrf import setup_csrf
+# from app.common.log import setup_logging
+# from app.common.pagination import setup_pagination
+# from app.worker.module import setup_modules
 
 DEFAULT: Tuple[str, ...] = (
-    "booktracker.blueprints.view",
-    "booktracker.middleware.request_context",
-    "booktracker.middleware.redirect",
-    "booktracker.worker.postgres",
-    "booktracker.worker.redis",
+    "app.blueprints.view",
+    "app.middleware.request_context",
+    "app.middleware.redirect",
+    "app.worker.postgres",
+    "app.worker.redis",
 )
 
 
@@ -35,11 +35,8 @@ def create_app(module_names: Optional[Sequence[str]] = None) -> Sanic:
     if module_names is None:
         module_names = DEFAULT
 
-    app = Sanic("BooktrackerApp")
+    app = Sanic("app")
     app.static("/static/", Path(__file__).parent / "static")
-    # app = Sanic("BooktrackerApp", request_class=BooktrackerRequest)
-    # app.config.UI_DIR = Path(__file__).parent.parent / "ui"
-    # app.config.CORS_ORIGINS = "http://localhost:7777" if app.config.LOCAL else "https://sanicbook.com"
     app.config.CSRF_REF_PADDING = 12
     app.config.CSRF_REF_LENGTH = 18
 
