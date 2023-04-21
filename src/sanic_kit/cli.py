@@ -20,9 +20,18 @@ from watchfiles import watch
 from .code import extract_api, extract_imports
 
 
+@dataclass
+class Config:
+    project: str
+
+
 @click.group()
-def cli():
-    ...
+@click.pass_context
+def cli(ctx):
+    if Path("pyproject.toml").exists():
+        pyproject = loads(Path("pyproject.toml").read_text())
+        config = Config(project=pyproject["project"]["name"])
+        ctx.obj = config
 
 
 @cli.command
@@ -35,7 +44,7 @@ def new(ctx: click.Context, path: Path):
 
     print(f"[green]Creating app in [yellow]{path}")
 
-    run_auto(str(Path(__file__).parent.parent.parent / "templates" / "default"), path)
+    run_auto(str(Path(__file__).parent.parent.parent / "templates" / "default"), path, data={"project": path.stem})
 
     for route in path.glob("**/.gitkeep"):
         route.unlink()
@@ -86,7 +95,9 @@ def handle_server(src, route, template_name):
         for handler in handlers
     ]
 
-    return '\n'.join(code)
+    return "\n".join(code)
+
+
 def find_nearest_layout(route):
     while not (layout := route.parent / "+layout.html").exists():
         route = route.parent
@@ -194,26 +205,28 @@ bp = Blueprint("app")
 
 
 @cli.command
-def build():
-    _build()
+@click.pass_context
+def build(ctx):
+    _build(ctx)
 
 
 def watch_files():
     try:
-        for change in watch(Path("test")):
+        for _ in watch(Path(".")):
             _build(restart=True)
     except KeyboardInterrupt:
         pass
 
 
 @cli.command
-def run():
-    _build()
+@click.pass_context
+def run(ctx):
+    _build(ctx)
     file_watcher = Process(target=watch_files)
     file_watcher.start()
     try:
         with chdir(Path("build")):
-            proc = subprocess.run(["sanic", "app.server:create_app", "--debug", "--dev"], check=True)
+            subprocess.run(["sanic", "app.server:create_app", "--debug", "--dev"], check=True)
     except KeyboardInterrupt:
         file_watcher.close()
 
