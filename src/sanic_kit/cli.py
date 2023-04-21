@@ -200,6 +200,7 @@ bp = Blueprint("app")
     (build / "blueprints" / "app.py").write_text(app_blueprint)
 
     shutil.copy(src / "index.html", templates)
+    shutil.copy(src / "server_setup.py", build)
 
     shutil.copytree(base / "static", build / "static", dirs_exist_ok=True)
     shutil.copytree(src / "lib", build / "lib", dirs_exist_ok=True)
