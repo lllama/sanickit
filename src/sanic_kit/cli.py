@@ -87,45 +87,55 @@ def handle_server(src, route, template_name):
     ]
 
     return '\n'.join(code)
+def find_nearest_layout(route):
+    while not (layout := route.parent / "+layout.html").exists():
+        route = route.parent
+        if route.stem == "src":
+            break
+    return layout
 
 
 def handle_page(src, route, templates, template_name):
     html = BS(route.read_text(), "html.parser")
 
-    (templates / template_name).write_text("""{% extends "test_src_routes_+layout.html" %}\n\n""" + html.prettify())
+    layout = find_nearest_layout(route)
+    layout_name = str(layout).replace(os.sep, "_").replace("[", "").replace("]", "")
+    (templates / template_name).write_text(f"""{{% extends "{layout_name}" %}}\n\n""" + html.prettify())
 
+    parameters = [x[1:-1] for x in route.parts if x.startswith("[") and x.endswith("]")]
+    route_url = (
+        str(route.relative_to(src / "routes").parent)
+        .replace(os.sep, "/")
+        .replace(".", "/")
+        .replace("[", "<")
+        .replace("]", ">")
+    )
+
+    name = (
+        str(route.relative_to(src / "routes").parent)
+        .replace(os.sep, "_")
+        .replace(".", "index")
+        .replace("[", "")
+        .replace("]", "")
+    )
     if script := html.find("handler"):
-        parameters = [x[1:-1] for x in route.parts if x.startswith("[") and x.endswith("]")]
-        route_url = (
-            str(route.relative_to(src / "routes").parent)
-            .replace(os.sep, "/")
-            .replace(".", "/")
-            .replace("[", "<")
-            .replace("]", ">")
-        )
-
-        name = (
-            str(route.relative_to(src / "routes").parent)
-            .replace(os.sep, "_")
-            .replace(".", "index")
-            .replace("[", "")
-            .replace("]", "")
-        )
         python = dedent(script.extract().text)
         imports, python = extract_imports(python, name, template_name, parameters)
         # Create the code
-        return ENDPOINT_TEMPLATE.render(
-            imports=imports,
-            route=route_url,
-            name=name,
-            method="get",
-            template=template_name,
-            code=python,
-        )
+    else:
+        imports, python = extract_imports("", name, template_name, parameters)
+    return ENDPOINT_TEMPLATE.render(
+        imports=imports,
+        route=route_url,
+        name=name,
+        method="get",
+        template=template_name,
+        code=python,
+    )
 
 
 def _build(restart=False):
-    base = Path("test")
+    base = Path(".")
     src = base / "src"
 
     build_root = Path("build")
@@ -171,7 +181,7 @@ bp = Blueprint("app")
                 app_blueprint += handle_page(src, route, templates, template_name)
             case "+server.py":
                 app_blueprint += handle_server(src, route, template_name)
-            case "+layout.sanic":
+            case "+layout.html":
                 html = BS(route.read_text(), "html.parser")
                 (templates / template_name).write_text("""{% extends "index.html" %}\n\n""" + html.prettify())
 
@@ -179,9 +189,8 @@ bp = Blueprint("app")
 
     shutil.copy(src / "index.html", templates)
 
-    shutil.copytree(base /"static", build / "static", dirs_exist_ok=True)
-    shutil.copytree(build /"lib", build / "lib", dirs_exist_ok=True)
-
+    shutil.copytree(base / "static", build / "static", dirs_exist_ok=True)
+    shutil.copytree(build / "lib", build / "lib", dirs_exist_ok=True)
 
 
 @cli.command
