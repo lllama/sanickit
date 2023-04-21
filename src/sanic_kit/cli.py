@@ -201,7 +201,7 @@ bp = Blueprint("app")
     shutil.copy(src / "index.html", templates)
 
     shutil.copytree(base / "static", build / "static", dirs_exist_ok=True)
-    shutil.copytree(build / "lib", build / "lib", dirs_exist_ok=True)
+    shutil.copytree(src / "lib", build / "lib", dirs_exist_ok=True)
 
 
 @cli.command
