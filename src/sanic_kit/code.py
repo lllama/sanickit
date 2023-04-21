@@ -1,7 +1,9 @@
 import ast
-from rich import print
-from dataclasses import dataclass
 import sys
+from dataclasses import dataclass
+
+from rich import print
+from rich.markup import escape
 
 
 @dataclass
@@ -13,6 +15,7 @@ class APIHandler:
 
 class Extractor(ast.NodeTransformer):
     """Makes our bare files into functions"""
+
     def __init__(self, name, template_name, parameters, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = name
@@ -23,11 +26,16 @@ class Extractor(ast.NodeTransformer):
     @property
     def extracted_imports(self):
         return self._extracted_imports
-        
+
     def visit_Import(self, node):
         self._extracted_imports.add(ast.unparse(node))
 
     def visit_ImportFrom(self, node):
+        match node:
+            case ast.ImportFrom(module="lib", names=names, level=1):
+                node = ast.ImportFrom(module="app.lib", names=names, level=0)
+            case _:
+                ...
         self._extracted_imports.add(ast.unparse(node))
 
     def visit_FunctionDef(self, node):
