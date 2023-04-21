@@ -159,11 +159,12 @@ def _build(restart=False):
 
     (build / "__init__.py").touch()
 
-    (build / "blueprints").mkdir(exist_ok=True)
-    (build / "blueprints" / "__init__.py").touch()
-    (build / "middleware").mkdir(exist_ok=True)
-    (build / "lib").mkdir(exist_ok=True)
+    for name in ("blueprints", "middleware", "lib"):
+        (build / name).mkdir(exist_ok=True)
+        (build / name / "__init__.py").touch()
+
     (build / "static").mkdir(exist_ok=True)
+
     templates = build_root / "templates"
     templates.mkdir(exist_ok=True)
 
@@ -202,6 +203,7 @@ bp = Blueprint("app")
 
     shutil.copytree(base / "static", build / "static", dirs_exist_ok=True)
     shutil.copytree(src / "lib", build / "lib", dirs_exist_ok=True)
+    shutil.copytree(src / "blueprints", build / "blueprints", dirs_exist_ok=True)
 
 
 @cli.command
