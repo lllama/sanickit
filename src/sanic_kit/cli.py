@@ -234,5 +234,13 @@ def run(ctx):
         file_watcher.close()
 
 
+@cli.command
+@click.pass_context
+def console(ctx):
+    from .console import SanicKit
+
+    SanicKit().run()
+
+
 if __name__ == "__main__":
     cli()
