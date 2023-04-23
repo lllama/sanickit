@@ -12,14 +12,16 @@ from textual.widgets import (Checkbox, DirectoryTree, Footer, Header, Label,
 
 class Logo(Label):
     def render(self):
-        return """\
-[white on #ea386b]                     
-   ▄███ █████ ██     
-   ██                
-    ▀███████ ███▄    
-                ██   
-   ████ ████████▀    
-                     """
+        return (
+            "[white on #ea386b]"
+            "                     \n"
+            "   ▄███ █████ ██     \n"
+            "   ██                \n"
+            "    ▀███████ ███▄    \n"
+            "                ██   \n"
+            "   ████ ████████▀    \n"
+            "                     \n"
+        )
 
 
 class Config(Widget):
@@ -79,9 +81,11 @@ class Config(Widget):
         yield Label("JavaScript Libraries")
         for pkg, value in self.UNPKG.items():
             yield Checkbox(pkg, value=value in self.unpkg_config)
+
         yield Label("CSS Libraries")
         for css, value in self.STYLESHEETS.items():
             yield Checkbox(css, value=value in self.stylesheets_config)
+
         yield Checkbox("Tailwind", value=self.config["sanic-kit"].get("tailwind"))
 
     def on_checkbox_changed(self, event: Checkbox.Changed):
