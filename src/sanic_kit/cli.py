@@ -110,7 +110,7 @@ def handle_page(src, route, templates, template_name):
     html = BS(route.read_text(), "html.parser")
 
     layout = find_nearest_layout(route)
-    layout_name = str(layout).replace(os.sep, "_").replace("[", "").replace("]", "")
+    layout_name = str(layout).replace("[", "").replace("]", "")
     (templates / template_name).write_text(f"""{{% extends "{layout_name}" %}}\n\n""" + html.prettify())
 
     parameters = [x[1:-1] for x in route.parts if x.startswith("[") and x.endswith("]")]
@@ -186,7 +186,9 @@ bp = Blueprint("app")
 
         # shutil.copy(route, build / route)
 
-        template_name = f"{str(route.with_suffix('')).replace(os.sep, '_')}.html"
+        # template_name = f"{str(route.with_suffix('')).replace(os.sep, '_')}.html"
+        template_name = f"{str(route.with_suffix(''))}.html"
+        (templates / route.parent).mkdir(exist_ok=True, parents=True)
         # Create our template
         match route.name:
             case "+page.sanic":
