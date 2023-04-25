@@ -2,7 +2,7 @@ import os
 import shutil
 import subprocess
 from contextlib import chdir
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from importlib.util import find_spec
 from multiprocessing import Process
 from pathlib import Path
@@ -23,21 +23,37 @@ from .code import extract_api, extract_imports
 @dataclass
 class Config:
     project: str
+    unpkgs: list[str]
+    stylesheets: list[str]
+    tailwind: bool = False
 
 
 @click.group()
 @click.pass_context
 def cli(ctx):
-    if Path("pyproject.toml").exists():
-        pyproject = loads(Path("pyproject.toml").read_text())
-        config = Config(project=pyproject["project"]["name"])
-        ctx.obj = config
+    ...
+
+
+def get_config():
+    if not Path("pyproject.toml").exists():
+        raise Exception("Need a pyproject.toml")
+
+    pyproject = loads(Path("pyproject.toml").read_text())
+
+    config = Config(
+        project=pyproject["project"]["name"],
+        unpkgs=list(pyproject["sanic-kit"].get("unpkgs", [])),
+        stylesheets=list(pyproject["sanic-kit"].get("stylesheets", [])),
+        tailwind=pyproject["sanic-kit"].get("tailwind", False),
+    )
+
+    return config
 
 
 @cli.command
-@click.argument("path", type=click.Path(file_okay=False, path_type=Path))
 @click.pass_context
-def new(ctx: click.Context, path: Path):
+@click.argument("path", type=click.Path(file_okay=False, path_type=Path))
+def new(ctx, path: Path):
     if path.exists():
         print("[red]Path already exists")
         ctx.exit()
@@ -180,13 +196,8 @@ bp = Blueprint("app")
 
 """
 
-    for route in (src / "routes").glob("**/*"):
+    for route in (src).glob("**/*"):
         print(f"[green]Processing: [yellow]{escape(str(route))}")
-        # (build / route.parent).mkdir(parents=True, exist_ok=True)
-
-        # shutil.copy(route, build / route)
-
-        # template_name = f"{str(route.with_suffix('')).replace(os.sep, '_')}.html"
         template_name = f"{str(route.with_suffix(''))}.html"
         (templates / route.parent).mkdir(exist_ok=True, parents=True)
         # Create our template
@@ -197,11 +208,19 @@ bp = Blueprint("app")
                 app_blueprint += handle_server(src, route, template_name)
             case "+layout.html":
                 html = BS(route.read_text(), "html.parser")
-                (templates / template_name).write_text("""{% extends "index.html" %}\n\n""" + html.prettify())
+                (templates / template_name).write_text("""{% extends "src/index.html" %}\n\n""" + html.prettify())
+            case "+head.html":
+                (templates / template_name).write_text(
+                    jinja_env.from_string(route.read_text()).render(**asdict(get_config()))
+                )
+            case _:
+                # Handle other files
+                match route.suffix:
+                    case ".html":
+                        shutil.copy(route, templates / route.parent)
 
     (build / "blueprints" / "app.py").write_text(app_blueprint)
 
-    shutil.copy(src / "index.html", templates)
     shutil.copy(src / "server_setup.py", build)
 
     shutil.copytree(base / "static", build / "static", dirs_exist_ok=True)
@@ -210,9 +229,8 @@ bp = Blueprint("app")
 
 
 @cli.command
-@click.pass_context
-def build(ctx):
-    _build(ctx)
+def build():
+    _build()
 
 
 def watch_files():
@@ -224,9 +242,9 @@ def watch_files():
 
 
 @cli.command
-@click.pass_context
-def run(ctx):
-    _build(ctx)
+def run():
+    _build()
+
     file_watcher = Process(target=watch_files)
     file_watcher.start()
     try:
@@ -237,8 +255,7 @@ def run(ctx):
 
 
 @cli.command
-@click.pass_context
-def console(ctx):
+def console():
     from .console import SanicKit
 
     SanicKit().run()

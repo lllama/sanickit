@@ -62,8 +62,8 @@ class Config(Widget):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.unpkg_config = config["sanic-kit"].get("unpkg", [])
-        self.stylesheets_config = config["sanic-kit"].get("stylesheet", [])
+        self.unpkg_config = config["sanic-kit"].get("unpkgs", [])
+        self.stylesheets_config = config["sanic-kit"].get("stylesheets", [])
 
     STYLESHEETS = {
         "classless": "https://classless.de/classless.css",
@@ -140,19 +140,19 @@ class SanicKit(App):
 
     def on_config_add_unpkg(self, message):
         package = message.package
-        self.add_to_list("unpkg", package)
+        self.add_to_list("unpkgs", package)
 
     def on_config_remove_unpkg(self, message):
         package = message.package
-        self.remove_from_list("unpkg", package)
+        self.remove_from_list("unpkgs", package)
 
     def on_config_add_stylesheet(self, message):
         stylesheet = message.stylesheet
-        self.add_to_list("stylesheet", stylesheet)
+        self.add_to_list("stylesheets", stylesheet)
 
     def on_config_remove_stylesheet(self, message):
         stylesheet = message.stylesheet
-        self.remove_from_list("stylesheet", stylesheet)
+        self.remove_from_list("stylesheets", stylesheet)
 
     def on_config_toggle_tailwind(self, message):
         self.config["sanic-kit"]["tailwind"] = message.value
