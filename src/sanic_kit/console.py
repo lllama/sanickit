@@ -3,11 +3,31 @@ from pathlib import Path
 import tomlkit
 from rich import print
 from textual.app import App
-from textual.containers import Horizontal
+from textual.containers import Grid, Horizontal
 from textual.message import Message
+from textual.screen import ModalScreen
 from textual.widget import Widget
-from textual.widgets import (Checkbox, DirectoryTree, Footer, Header, Label,
-                             TabbedContent)
+from textual.widgets import (Button, Checkbox, DirectoryTree, Footer, Header,
+                             Input, Label, TabbedContent, TextLog)
+
+
+class NewRoute(ModalScreen):
+    class CreateRoute(Message):
+        def __init__(self, route):
+            super().__init__()
+            self.route = route
+
+    def on_mount(self):
+        self.query_one(Input).focus()
+
+    def compose(self):
+        with Grid(id="newroute"):
+            yield Label("Add new route")
+            yield Input(placeholder="new route")
+
+    def on_input_submitted(self, event):
+        self.app.post_message(self.CreateRoute(event.input.value))
+        self.app.pop_screen()
 
 
 class Logo(Label):
@@ -25,15 +45,6 @@ class Logo(Label):
 
 
 class Config(Widget):
-    DEFAULT_CSS = """
-    Config {
-            height: auto;
-            }
-    Config > Label {
-            padding: 1;
-            }
-    """
-
     class AddUnpkg(Message):
         def __init__(self, package):
             super().__init__()
@@ -104,16 +115,55 @@ class Config(Widget):
             self.post_message(self.ToggleTailwind(event.checkbox.value))
 
 
+class Server(Widget):
+    def compose(self):
+        with Horizontal():
+            yield Button("Start")
+            yield Button("Restart", disabled=True)
+        yield TextLog()
+
+
+class Routes(Widget):
+    def __init__(self, root):
+        super().__init__()
+        self.root = root
+
+    def on_directory_tree_file_selected(self, event):
+        textlog = self.query_one(TextLog)
+        textlog.clear()
+        textlog.write(Path(event.path).read_text())
+
+    def compose(self):
+        with Horizontal():
+            yield Button("Add route", id="addroute")
+            yield Button("Add layout")
+        with Horizontal():
+            yield DirectoryTree(self.root)
+            yield TextLog(highlight=True, classes="hidden")
+
+    async def refresh_tree(self, path_to_select):
+        tree = self.query_one(DirectoryTree)
+        await tree.remove()
+        await self.mount(DirectoryTree(self.root))
+        tree = self.query_one(DirectoryTree)
+
+        path_parts = path_to_select.relative_to(self.root).parts
+
+        node = tree.root
+        current_path = Path(self.root)
+        for part in path_parts:
+            node = [n for n in node.children if Path(n.data.path) == current_path / part][0]
+            if node.data.is_dir:
+                tree.load_directory(node)
+            else:
+                tree.select_node(node)
+            current_path = current_path / part
+
+        tree.select_node(node)
+
+
 class SanicKit(App):
-    CSS = """
-    DirectoryTree {
-            height: auto;
-            }
-    Logo {
-        width: 23;
-        margin: 2;
-    }
-    """
+    CSS_PATH = "console.css"
 
     async def on_load(self):
         if (pyproj := Path("pyproject.toml")).exists():
@@ -161,12 +211,25 @@ class SanicKit(App):
     def save_config(self):
         Path("pyproject.toml").write_text(tomlkit.dumps(self.config))
 
+    def on_button_pressed(self, event):
+        match event.button.id:
+            case "addroute":
+                self.push_screen(NewRoute())
+
+    async def on_new_route_create_route(self, message):
+        self.log(f"creating new route {message.route}")
+        new_dir = Path("src/routes") / message.route
+        new_dir.mkdir(exist_ok=True, parents=True)
+        new_page = new_dir / "+page.sanic"
+        new_page.touch()
+        await self.query_one(Routes).refresh_tree(new_page)
+
     def compose(self):
         yield Header()
         with Horizontal():
             yield Logo()
-            with TabbedContent("Config", "Routes", "Server"):
+            with TabbedContent("Routes", "Server", "Config"):
+                yield Routes("./src/routes")
+                yield Server()
                 yield Config(self.config)
-                yield DirectoryTree("./src/routes")
-                yield Label("hello")
         yield Footer()
