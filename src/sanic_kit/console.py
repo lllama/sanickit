@@ -1,8 +1,13 @@
+import os
+import subprocess
+import sys
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from pathlib import Path
 
 import tomlkit
 from rich import print
 from textual.app import App
+from textual.binding import Binding
 from textual.containers import Grid, Horizontal
 from textual.message import Message
 from textual.screen import ModalScreen
@@ -128,10 +133,17 @@ class Routes(Widget):
         super().__init__()
         self.root = root
 
-    def on_directory_tree_file_selected(self, event):
+    def update_preview(self, node):
         textlog = self.query_one(TextLog)
         textlog.clear()
-        textlog.write(Path(event.path).read_text())
+        textlog.write(Path(node.path).read_text())
+
+    def on_tree_node_highlighted(self, event):
+        if not event.node.data.is_dir:
+            self.update_preview(event.node.data)
+
+    def on_directory_tree_file_selected(self, event):
+        self.update_preview(event)
 
     def compose(self):
         with Horizontal():
@@ -164,6 +176,34 @@ class Routes(Widget):
 
 class SanicKit(App):
     CSS_PATH = "console.css"
+
+    BINDINGS = [
+        Binding(key="q", action="quit", description="Quit the app"),
+        Binding(key="a", action="add_route", description="Add route"),
+        Binding(key="e", action="edit_route", description="Edit route"),
+    ]
+
+    @contextmanager
+    def suspend(self):
+        driver = self._driver
+        if driver is not None:
+            driver.stop_application_mode()
+
+            with redirect_stdout(sys.__stdout__), redirect_stderr(sys.__stderr__):
+                yield
+
+            driver.start_application_mode()
+
+    def action_add_route(self):
+        self.push_screen(NewRoute())
+
+    async def action_edit_route(self):
+        tree = self.query_one(DirectoryTree)
+        self.log(tree.cursor_node)
+        if not (file := tree.cursor_node.data).is_dir:
+            self.log(f"editing file {file.path}")
+            with self.suspend():
+                subprocess.run([os.environ["EDITOR"], file.path])
 
     async def on_load(self):
         if (pyproj := Path("pyproject.toml")).exists():
@@ -217,7 +257,6 @@ class SanicKit(App):
                 self.push_screen(NewRoute())
 
     async def on_new_route_create_route(self, message):
-        self.log(f"creating new route {message.route}")
         new_dir = Path("src/routes") / message.route
         new_dir.mkdir(exist_ok=True, parents=True)
         new_page = new_dir / "+page.sanic"
