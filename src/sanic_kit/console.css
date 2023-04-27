@@ -41,14 +41,14 @@ Server Button {
   margin-right: 1;
 }
 Routes {
-  /* border: solid red; */
-  height: 30;
+  height: auto;
   layout: vertical;
 }
 Routes DirectoryTree {
   /* border: solid red; */
   min-height: 20;
-  width: 30;
+  min-width: 30;
+  width: auto;
 }
 Routes TextLog {
   border: round darkgray;
