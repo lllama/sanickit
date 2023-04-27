@@ -205,6 +205,7 @@ class SanicKit(App):
             self.log(f"editing file {file.path}")
             with self.suspend():
                 subprocess.run([os.environ["EDITOR"], file.path])
+            self.query_one(Routes).update_preview(file)
 
     async def on_load(self):
         if (pyproj := Path("pyproject.toml")).exists():
