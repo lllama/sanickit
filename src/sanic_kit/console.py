@@ -156,7 +156,8 @@ class Routes(Widget):
     async def refresh_tree(self, path_to_select):
         tree = self.query_one(DirectoryTree)
         await tree.remove()
-        await self.mount(DirectoryTree(self.root))
+        text_log = self.query_one(TextLog)
+        await self.mount(DirectoryTree(self.root), before=text_log)
         tree = self.query_one(DirectoryTree)
 
         path_parts = path_to_select.relative_to(self.root).parts
