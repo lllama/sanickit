@@ -259,7 +259,11 @@ class SanicKit(App):
                 self.push_screen(NewRoute())
 
     async def on_new_route_create_route(self, message):
-        new_dir = Path("src/routes") / message.route
+        route = Path(message.route)
+        if route.is_absolute():
+            route = route.relative_to("/")
+
+        new_dir = Path("src/routes") / route
         new_dir.mkdir(exist_ok=True, parents=True)
         new_page = new_dir / "+page.sanic"
         new_page.touch()
