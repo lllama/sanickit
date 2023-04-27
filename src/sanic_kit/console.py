@@ -262,6 +262,14 @@ class SanicKit(App):
         new_dir.mkdir(exist_ok=True, parents=True)
         new_page = new_dir / "+page.sanic"
         new_page.touch()
+        new_page.write_text(
+            """\
+<handler>
+</handler>
+{% block main %}
+{% endblock %}
+"""
+        )
         await self.query_one(Routes).refresh_tree(new_page)
 
     def compose(self):
