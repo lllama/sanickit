@@ -1,7 +1,8 @@
+import asyncio
 import os
 import subprocess
 import sys
-from contextlib import contextmanager, redirect_stderr, redirect_stdout
+from contextlib import chdir, contextmanager, redirect_stderr, redirect_stdout
 from pathlib import Path
 
 import tomlkit
@@ -14,6 +15,8 @@ from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import (Button, Checkbox, DirectoryTree, Footer, Header,
                              Input, Label, TabbedContent, TextLog)
+
+from .cli import _build as build_app
 
 
 class NewRoute(ModalScreen):
@@ -121,11 +124,71 @@ class Config(Widget):
 
 
 class Server(Widget):
+    def __init__(self):
+        super().__init__()
+        self.process = None
+
     def compose(self):
         with Horizontal():
-            yield Button("Start")
-            yield Button("Restart", disabled=True)
-        yield TextLog()
+            yield Button("Start", id="start")
+            yield Button("Reload", id="reload", disabled=True)
+            yield Button("Stop", id="stop", disabled=True)
+        yield TextLog(auto_scroll=True)
+
+    async def run_inspector(self, command):
+        process = await asyncio.subprocess.create_subprocess_exec(
+            *["sanic", "inspect", "reload"],
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        await process.wait()
+
+    async def on_button_pressed(self, event):
+        button = event.button
+        match button.id:
+            case "start":
+                button.disabled = True
+                self.query_one("#reload").disabled = False
+                self.query_one("#stop").disabled = False
+                self.run_worker(self.start_server)
+            case "reload":
+                await self.run_inspector("reload")
+            case "stop":
+                button.disabled = True
+                self.query_one("#reload").disabled = True
+                self.query_one("#start").disabled = False
+                await self.run_inspector("shutdown")
+
+            case _:
+                self.query_one(TextLog).write("Some random button got pressed")
+
+    async def start_server(self):
+        text_log = self.query_one(TextLog)
+
+        build_app()
+
+        my_env = os.environ.copy()
+        my_env["SANIC_INSPECTOR"] = "True"
+
+        with chdir(Path("build")):
+            self.process = process = await asyncio.subprocess.create_subprocess_exec(
+                *["sanic", "app.server:create_app", "--debug", "--dev", "--no-motd", "--coffee"],
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=my_env,
+            )
+
+        while line := await process.stdout.readline():
+            text_log.write(line.decode().rstrip())
+
+        await process.wait()
+        self.query_one("#start").disabled = False
+        self.query_one("#reload").disabled = True
+        self.query_one("#stop").disabled = True
+
+    def on_unmount(self, _):
+        if self.process:
+            self.process.terminate()
 
 
 class Routes(Widget):

@@ -29,11 +29,16 @@ Server {
   layout: vertical;
   height: auto;
 }
+Server * {
+}
+
 Server Horizontal {
   height: auto;
 }
 Server TextLog {
-  height: auto;
+  min-height: 30;
+  min-width: 50;
+  width: 100;
 }
 Server Button {
   height: auto;
