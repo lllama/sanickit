@@ -79,6 +79,24 @@ class FunctionAdder(Extractor):
     def __init__(self, name, template_name, parameters, *args, **kwargs):
         super().__init__(name, template_name, parameters)
         self.new_return = ast.parse(f"""return await render("{template_name}", context=locals())""")
+        self.template_name = template_name
+
+    def visit_Return(self, node):
+        match node:
+            case ast.Return(
+                value=ast.Call(
+                    func=ast.Name(id="fragment", ctx=ast.Load()),
+                    args=[ast.Constant(value=fragment)],
+                    keywords=[],
+                )
+            ):
+                self._extracted_imports.add("from sanic.response import text")
+                self._extracted_imports.add("from jinja2_fragments import render_block_async")
+                return ast.parse(
+                    f"""return text(await render_block_async(request.app.ext.environment, "{self.template_name}", "{fragment}", **locals()))"""
+                )
+            case _:
+                return node
 
     def visit_Module(self, node):
         super().generic_visit(node)
