@@ -227,6 +227,7 @@ bp = Blueprint("appBlueprint")
     shutil.copytree(base / "static", build / "static", dirs_exist_ok=True)
     shutil.copytree(src / "lib", build / "lib", dirs_exist_ok=True)
     shutil.copytree(src / "blueprints", build / "blueprints", dirs_exist_ok=True)
+    shutil.copytree(src / "middleware", build / "middleware", dirs_exist_ok=True)
 
 
 @cli.command

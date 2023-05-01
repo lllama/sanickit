@@ -15,7 +15,7 @@ from sanic import Sanic
 
 DEFAULT: Tuple[str, ...] = [
     "app.blueprints.app",
-    # "app.middleware.htmx",
+    "app.middleware.htmx",
     # "app.middleware.request_context",
     # "app.middleware.redirect",
 ]
