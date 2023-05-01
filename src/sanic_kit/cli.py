@@ -192,7 +192,7 @@ from sanic import Blueprint
 from sanic_ext import render
 
 
-bp = Blueprint("app")
+bp = Blueprint("appBlueprint")
 
 """
 
