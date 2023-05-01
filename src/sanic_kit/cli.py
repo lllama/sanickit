@@ -119,7 +119,7 @@ def find_nearest_layout(route):
         route = route.parent
         if route.stem == "src":
             break
-    return layout
+    return layout.relative_to("src")
 
 
 def handle_page(src, route, templates, template_name):
@@ -196,10 +196,11 @@ bp = Blueprint("appBlueprint")
 
 """
 
-    for route in (src).glob("**/*"):
+    for route in src.glob("**/*"):
         print(f"[green]Processing: [yellow]{escape(str(route))}")
-        template_name = f"{str(route.with_suffix(''))}.html"
-        (templates / route.parent).mkdir(exist_ok=True, parents=True)
+        template_name = f"{str(route.with_suffix('').relative_to(src))}.html"
+        if (path := route.parent.relative_to(src)) not in [Path("middleware")]:
+            (templates / path).mkdir(exist_ok=True, parents=True)
         # Create our template
         match route.name:
             case "+page.sanic":
@@ -208,7 +209,7 @@ bp = Blueprint("appBlueprint")
                 app_blueprint += handle_server(src, route, template_name)
             case "+layout.html":
                 html = BS(route.read_text(), "html.parser")
-                (templates / template_name).write_text("""{% extends "src/index.html" %}\n\n""" + html.prettify())
+                (templates / template_name).write_text("""{% extends "index.html" %}\n\n""" + html.prettify())
             case "+head.html":
                 (templates / template_name).write_text(
                     jinja_env.from_string(route.read_text()).render(**asdict(get_config()))
@@ -217,7 +218,7 @@ bp = Blueprint("appBlueprint")
                 # Handle other files
                 match route.suffix:
                     case ".html":
-                        shutil.copy(route, templates / route.parent)
+                        shutil.copy(route, templates / route.parent.relative_to(src))
 
     (build / "blueprints" / "app.py").write_text(app_blueprint)
 
