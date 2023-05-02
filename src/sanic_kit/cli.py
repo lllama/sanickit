@@ -1,5 +1,6 @@
 import os
 import shutil
+import stat
 import subprocess
 from contextlib import chdir
 from dataclasses import asdict, dataclass
@@ -9,6 +10,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import click
+import httpx
 from bs4 import BeautifulSoup as BS
 from copier import run_auto
 from jinja2 import BaseLoader, Environment
@@ -62,8 +64,48 @@ def new(ctx, path: Path):
 
     run_auto(str(Path(__file__).parent.parent.parent / "templates" / "default"), path, data={"project": path.stem})
 
+    Path("./.sanic-kit").mkdir()
+    with open(Path("./.sanic-kit") / "tailwindcss", "wb") as f:
+        response = httpx.get(
+            "https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-macos-arm64"
+        )
+        f.write(response.content)
+
     for route in path.glob("**/.gitkeep"):
         route.unlink()
+
+    download_tailwind()
+
+
+def download_tailwind():
+    Path("./.sanic-kit").mkdir(exist_ok=True)
+
+    tailwind_executable = Path("./.sanic-kit") / "tailwindcss"
+    tailwind_config = Path("./.sanic-kit") / "tailwind.config.js"
+    if not tailwind_executable.exists():
+        with open(tailwind_executable, "wb") as f:
+            response = httpx.get(
+                "https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-macos-arm64",
+                follow_redirects=True,
+            )
+            f.write(response.content)
+        tailwind_executable.chmod(stat.S_IEXEC | stat.S_IREAD | stat.S_IWRITE)
+    if not tailwind_config.exists():
+        tailwind_config.write_text(
+            dedent(
+                """\
+            /** @type {import('tailwindcss').Config} */
+            module.exports = {
+              content: ['./src/**/*.{html,sanic}'],
+              theme: {
+                extend: {},
+              },
+              plugins: [],
+            }
+
+                """
+            )
+        )
 
 
 jinja_env = Environment(loader=BaseLoader())
@@ -247,7 +289,7 @@ def build():
 
 def watch_files():
     try:
-        for _ in watch(Path(".")):
+        for _ in watch(Path("./src")):
             _build(restart=True)
     except KeyboardInterrupt:
         pass
@@ -257,13 +299,28 @@ def watch_files():
 def run():
     _build()
 
+    download_tailwind()
+
+    tailwind_process = subprocess.Popen(
+        [
+            "./.sanic-kit/tailwindcss",
+            "--watch",
+            "./src",
+            "--output",
+            "./build/app/static/tailwind.css",
+            "--config",
+            "./.sanic-kit/tailwind.config.js",
+        ]
+    )
     file_watcher = Process(target=watch_files)
     file_watcher.start()
     try:
         with chdir(Path("build")):
             subprocess.run(["sanic", "app.server:create_app", "--debug", "--dev"], check=True)
     except KeyboardInterrupt:
-        file_watcher.close()
+        pass
+    file_watcher.close()
+    tailwind_process.terminate()
 
 
 @cli.command
