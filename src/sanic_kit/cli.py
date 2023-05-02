@@ -68,14 +68,19 @@ def new(ctx, path: Path):
 
 jinja_env = Environment(loader=BaseLoader())
 
-ENDPOINT_TEMPLATE = jinja_env.from_string(
-    """
-{% for import in imports %}
-{{ import -}}
+IMPORTS_TEMPLATE = jinja_env.from_string(
+    """\
+{%- for import in imports -%}
+{{- import -}}
 {% endfor %}
+"""
+)
+ENDPOINT_TEMPLATE = jinja_env.from_string(
+    """\
 
 @bp.{{method|lower}}("{{route}}", name="{{name}}")
 {{code}}
+
 """
 )
 
@@ -101,7 +106,6 @@ def handle_server(src, route, template_name):
     # Create the code
     code = [
         ENDPOINT_TEMPLATE.render(
-            imports=imports,
             route=route_url,
             name=handler.name,
             method=handler.method,
@@ -111,7 +115,7 @@ def handle_server(src, route, template_name):
         for handler in handlers
     ]
 
-    return "\n".join(code)
+    return "\n".join(code), imports
 
 
 def find_nearest_layout(route):
@@ -148,16 +152,17 @@ def handle_page(src, route, templates, template_name):
     if script := html.find("handler"):
         python = dedent(script.extract().text)
         imports, python = extract_imports(python, name, template_name, parameters)
-        # Create the code
     else:
         imports, python = extract_imports("", name, template_name, parameters)
-    return ENDPOINT_TEMPLATE.render(
-        imports=imports,
-        route=route_url,
-        name=name,
-        method="get",
-        template=template_name,
-        code=python,
+    return (
+        ENDPOINT_TEMPLATE.render(
+            route=route_url,
+            name=name,
+            method="get",
+            template=template_name,
+            code=python,
+        ),
+        imports,
     )
 
 
@@ -196,6 +201,7 @@ bp = Blueprint("app_blueprint")
 
 """
 
+    all_imports = []
     for route in src.glob("**/*"):
         print(f"[green]Processing: [yellow]{escape(str(route))}")
         template_name = f"{str(route.with_suffix('').relative_to(src))}.html"
@@ -204,9 +210,13 @@ bp = Blueprint("app_blueprint")
         # Create our template
         match route.name:
             case "+page.sanic":
-                app_blueprint += handle_page(src, route, templates, template_name)
+                code, imports = handle_page(src, route, templates, template_name)
+                app_blueprint += code
+                all_imports.extend(imports)
             case "+server.py":
-                app_blueprint += handle_server(src, route, template_name)
+                code, imports = handle_server(src, route, template_name)
+                app_blueprint += code
+                all_imports.extend(imports)
             case "+layout.html":
                 html = BS(route.read_text(), "html.parser")
                 (templates / template_name).write_text("""{% extends "index.html" %}\n\n""" + html.prettify())
@@ -220,7 +230,7 @@ bp = Blueprint("app_blueprint")
                     case ".html":
                         shutil.copy(route, templates / route.parent.relative_to(src))
 
-    (build / "blueprints" / "app.py").write_text(app_blueprint)
+    (build / "blueprints" / "app.py").write_text(IMPORTS_TEMPLATE.render(imports=all_imports) + app_blueprint)
 
     shutil.copy(src / "server_setup.py", build)
 
