@@ -2,6 +2,8 @@ from importlib import import_module
 from pathlib import Path
 from typing import Optional, Sequence, Tuple
 
+from jinja2.ext import Extension
+from jinja2.lexer import Token
 # Modules imported here should NOT have a Sanic.get_app() call in the global
 # scope. Doing so will cause a circular import. Therefore, we progromatically
 # import those modules inside of the create_app() factory.
@@ -10,6 +12,34 @@ from typing import Optional, Sequence, Tuple
 # from app.common.log import setup_logging
 # from app.common.pagination import setup_pagination
 from sanic import Sanic
+
+
+class RelativeInclude(Extension):
+    def preprocess(self, source, name, filename=None):
+        self.name = name
+        self.filename = filename
+        return source
+
+    def filter_stream(self, stream):
+        in_include_tag = False
+        for token in stream:
+            match token:
+                case Token(type="name", value="include"):
+                    in_include_tag = True
+                    yield token
+                case Token(type="block_end") if in_include_tag:
+                    in_include_tag = False
+                    yield token
+                case Token(type="string") if in_include_tag and token.value.startswith("."):
+                    new_token = Token(
+                        lineno=token.lineno,
+                        type=token.type,
+                        value=str(Path(self.filename).relative_to("templates").parent / token.value),
+                    )
+                    yield new_token
+                case _:
+                    yield token
+
 
 # from .blueprints.app import bp as app_bp
 
@@ -59,8 +89,7 @@ def create_app(namespace, module_names: Optional[Sequence[str]] = None) -> Sanic
     app.static("/static/", Path(__file__).parent / "static")
     app.config.CSRF_REF_PADDING = 12
     app.config.CSRF_REF_LENGTH = 18
-
-    # app.blueprint(app_bp)
+    app.ext.templating.environment.add_extension(RelativeInclude)
 
     # setup_logging(app)
     # setup_pagination(app)
