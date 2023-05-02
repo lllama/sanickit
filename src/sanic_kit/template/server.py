@@ -21,14 +21,26 @@ DEFAULT: Tuple[str, ...] = [
 ]
 
 
-def setup_modules(app: Sanic, *module_names: str):
+def load_modules(path):
+    for module in (Path(__file__).parent / path).glob("*.py"):
+        yield import_module(f"app.{path}.{module.stem}")
+
+
+def setup_blueprints(app: Sanic):
     """
-    Load some modules
+    Load the blueprints
     """
-    for module_name in module_names:
-        module = import_module(module_name)
+    for module in load_modules("blueprints"):
         if bp := getattr(module, "bp", None):
             app.blueprint(bp)
+
+
+def setup_middleware(app: Sanic):
+    """
+    Load the middleware
+    """
+    for module in load_modules("middleware"):
+        pass  # Don't need to do anything
 
 
 def create_app(namespace, module_names: Optional[Sequence[str]] = None) -> Sanic:
@@ -53,7 +65,8 @@ def create_app(namespace, module_names: Optional[Sequence[str]] = None) -> Sanic
     # setup_logging(app)
     # setup_pagination(app)
     # setup_auth(app)
-    setup_modules(app, *module_names)
+    setup_middleware(app)
+    setup_blueprints(app)
     # setup_csrf(app)
 
     return app
