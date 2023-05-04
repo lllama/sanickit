@@ -2,6 +2,7 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 from contextlib import chdir
 from dataclasses import asdict, dataclass
 from importlib.util import find_spec
@@ -316,7 +317,9 @@ def run():
     file_watcher.start()
     try:
         with chdir(Path("build")):
-            subprocess.run(["sanic", "app.server:create_app", "--debug", "--dev"], check=True)
+            subprocess.run(
+                [Path(sys.executable).parent / "sanic", "app.server:create_app", "--debug", "--dev"], check=True
+            )
     except KeyboardInterrupt:
         pass
     file_watcher.close()

@@ -18,6 +18,8 @@ from textual.widgets import (Button, Checkbox, DirectoryTree, Footer, Header,
 
 from .cli import _build as build_app
 
+SANIC_EXE = Path(sys.executable).parent / "sanic"
+
 
 class NewRoute(ModalScreen):
     class CreateRoute(Message):
@@ -126,7 +128,7 @@ class Config(Widget):
 class Server(Widget):
     def __init__(self):
         super().__init__()
-        self.process = None
+        self.server_process = None
 
     def compose(self):
         with Horizontal():
@@ -137,7 +139,7 @@ class Server(Widget):
 
     async def run_inspector(self, command):
         process = await asyncio.subprocess.create_subprocess_exec(
-            *["sanic", "inspect", "reload"],
+            *[SANIC_EXE, "inspect", "reload"],
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -150,7 +152,7 @@ class Server(Widget):
                 button.disabled = True
                 self.query_one("#reload").disabled = False
                 self.query_one("#stop").disabled = False
-                self.run_worker(self.start_server)
+                self.start_server()
             case "reload":
                 await self.run_inspector("reload")
             case "stop":
@@ -162,6 +164,7 @@ class Server(Widget):
             case _:
                 self.query_one(TextLog).write("Some random button got pressed")
 
+    @work(exclusive=True, group="server")
     async def start_server(self):
         text_log = self.query_one(TextLog)
 
@@ -171,8 +174,15 @@ class Server(Widget):
         my_env["SANIC_INSPECTOR"] = "True"
 
         with chdir(Path("build")):
-            self.process = process = await asyncio.subprocess.create_subprocess_exec(
-                *["sanic", "app.server:create_app", "--debug", "--dev", "--no-motd", "--coffee"],
+            self.server_process = process = await asyncio.subprocess.create_subprocess_exec(
+                *[
+                    SANIC_EXE,
+                    "app.server:create_app",
+                    "--debug",
+                    "--dev",
+                    "--no-motd",
+                    "--coffee",
+                ],
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 env=my_env,
@@ -187,8 +197,8 @@ class Server(Widget):
         self.query_one("#stop").disabled = True
 
     def on_unmount(self, _):
-        if self.process:
-            self.process.terminate()
+        if self.server_process:
+            self.server_process.terminate()
 
 
 class Routes(Widget):
