@@ -19,6 +19,7 @@ from textual.widgets import (Button, Checkbox, DirectoryTree, Footer, Header,
 from watchfiles import awatch
 
 from .cli import _build as build_app
+from .cli import download_tailwind
 
 SANIC_EXE = Path(sys.executable).parent / "sanic"
 
@@ -131,6 +132,7 @@ class Server(Widget):
     def __init__(self):
         super().__init__()
         self.server_process = None
+        self.tailwind_process = None
 
     def compose(self):
         with Horizontal():
@@ -154,6 +156,7 @@ class Server(Widget):
                 button.disabled = True
                 self.query_one("#reload").disabled = False
                 self.query_one("#stop").disabled = False
+                self.start_tailwind()
                 self.watch_files()
                 self.start_server()
             case "reload":
@@ -171,6 +174,28 @@ class Server(Widget):
     async def watch_files(self):
         async for _ in awatch(Path("./src")):
             build_app(restart=True, quiet=True)
+
+    @work(exclusive=True, group="tailwind")
+    def start_tailwind(self):
+        download_tailwind()
+
+        self.tailwind_process = process = subprocess.Popen(
+            [
+                "./.sanic-kit/tailwindcss",
+                "--poll",
+                "--watch",
+                "./src",
+                "--output",
+                "./build/app/static/tailwind.css",
+                "--config",
+                "./.sanic-kit/tailwind.config.js",
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        process.wait()
 
     @work(exclusive=True, group="server")
     async def start_server(self):
@@ -207,6 +232,8 @@ class Server(Widget):
     def on_unmount(self, _):
         if self.server_process:
             self.server_process.terminate()
+        if self.tailwind_process:
+            self.tailwind_process.terminate()
 
 
 class Routes(Widget):
@@ -281,7 +308,6 @@ class SanicKit(App):
 
     async def action_edit_route(self):
         tree = self.query_one(DirectoryTree)
-        self.log(tree.cursor_node)
         if not (file := tree.cursor_node.data).is_dir:
             self.log(f"editing file {file.path}")
             with self.suspend():
