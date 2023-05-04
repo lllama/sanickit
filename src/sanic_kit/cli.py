@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 import stat
 import subprocess
@@ -67,8 +68,12 @@ def new(ctx, path: Path):
 
     Path("./.sanic-kit").mkdir()
     with open(Path("./.sanic-kit") / "tailwindcss", "wb") as f:
+        architecture = platform.machine()
+        operating_system = platform.system().lower()
+        operating_system = "macos" if operating_system == "darwin" else operating_system
+
         response = httpx.get(
-            "https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-macos-arm64"
+            f"https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-{operating_system}-{architecture}"
         )
         f.write(response.content)
 
