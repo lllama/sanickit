@@ -277,7 +277,10 @@ class SanicKit(App):
         if not (file := tree.cursor_node.data).is_dir:
             self.log(f"editing file {file.path}")
             with self.suspend():
-                subprocess.run([os.environ["EDITOR"], file.path])
+                process = await asyncio.subprocess.create_subprocess_exec(
+                    *[os.environ["EDITOR"], file.path],
+                )
+                await process.wait()
             self.query_one(Routes).update_preview(file)
 
     async def on_load(self):
