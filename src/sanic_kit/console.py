@@ -7,6 +7,7 @@ from pathlib import Path
 
 import tomlkit
 from rich import print
+from textual import work
 from textual.app import App
 from textual.binding import Binding
 from textual.containers import Grid, Horizontal
@@ -15,6 +16,7 @@ from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import (Button, Checkbox, DirectoryTree, Footer, Header,
                              Input, Label, TabbedContent, TextLog)
+from watchfiles import awatch
 
 from .cli import _build as build_app
 
@@ -152,6 +154,7 @@ class Server(Widget):
                 button.disabled = True
                 self.query_one("#reload").disabled = False
                 self.query_one("#stop").disabled = False
+                self.watch_files()
                 self.start_server()
             case "reload":
                 await self.run_inspector("reload")
@@ -163,6 +166,11 @@ class Server(Widget):
 
             case _:
                 self.query_one(TextLog).write("Some random button got pressed")
+
+    @work(exclusive=True, group="watcher")
+    async def watch_files(self):
+        async for _ in awatch(Path("./src")):
+            build_app(restart=True, quiet=True)
 
     @work(exclusive=True, group="server")
     async def start_server(self):

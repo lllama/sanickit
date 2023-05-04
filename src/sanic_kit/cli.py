@@ -209,7 +209,7 @@ def handle_page(src, route, templates, template_name):
     )
 
 
-def _build(restart=False):
+def _build(restart=False, quiet=False):
     base = Path(".")
     src = base / "src"
 
@@ -246,7 +246,8 @@ bp = Blueprint("app_blueprint")
 
     all_imports = []
     for route in src.glob("**/*"):
-        print(f"[green]Processing: [yellow]{escape(str(route))}")
+        if not quiet:
+            print(f"[green]Processing: [yellow]{escape(str(route))}")
         template_name = f"{str(route.with_suffix('').relative_to(src))}.html"
         if (path := route.parent.relative_to(src)) not in [Path("middleware")]:
             (templates / path).mkdir(exist_ok=True, parents=True)
