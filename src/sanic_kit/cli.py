@@ -126,7 +126,7 @@ IMPORTS_TEMPLATE = jinja_env.from_string(
 ENDPOINT_TEMPLATE = jinja_env.from_string(
     """\
 
-@bp.{{method|lower}}("{{route}}", name="{{name}}")
+@bp.{{method|lower}}("{{route}}", name="{{route_name}}")
 {{code}}
 
 """
@@ -190,7 +190,7 @@ def handle_page(src, route, templates, template_name):
         .replace("]", ">")
     )
 
-    name = (
+    name = route_name = (
         str(route.relative_to(src / "routes").parent)
         .replace(os.sep, "_")
         .replace(".", "index")
@@ -198,6 +198,7 @@ def handle_page(src, route, templates, template_name):
         .replace("]", "")
     )
     if script := html.find("handler"):
+        route_name = script.attrs.get("route-name", name)
         python = dedent(script.extract().text)
         imports, python = extract_imports(python, name, template_name, parameters)
     else:
@@ -205,7 +206,7 @@ def handle_page(src, route, templates, template_name):
     return (
         ENDPOINT_TEMPLATE.render(
             route=route_url,
-            name=name,
+            route_name=route_name,
             method="get",
             template=template_name,
             code=python,
