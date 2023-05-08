@@ -85,7 +85,7 @@ class FunctionAdder(Extractor):
         match node:
             case ast.Return(
                 value=ast.Call(
-                    func=ast.Name(id="fragment", ctx=ast.Load()),
+                    func=ast.Name(id="fragment"),
                     args=[ast.Constant(value=fragment)],
                     keywords=[],
                 )
@@ -95,6 +95,8 @@ class FunctionAdder(Extractor):
                 return ast.parse(
                     f"""return text(await render_block_async(request.app.ext.environment, "{self.template_name}", "{fragment}", **locals()))"""
                 )
+            case ast.Return(value=ast.Call(func=ast.Name(id="template"), args=[], keywords=[])):
+                return self.new_return
             case _:
                 return node
 
