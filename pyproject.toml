@@ -27,6 +27,7 @@ classifiers = [
 dependencies = ["sanic", "sanic-ext", "jinja2", "copier", "click", "copier",
 "rich","beautifulsoup4", "watchfiles", "tomlkit", "textual", "httpx"]
 
+
 [project.scripts]
 sk = "sanic_kit.cli:cli"
 
@@ -42,6 +43,9 @@ path = "src/sanic_kit/__about__.py"
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
+  "sphinx",
+  "furo",
+  "myst-parser"
 ]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
