@@ -24,8 +24,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["sanic", "sanic-ext", "jinja2", "copier", "click", "copier",
-"rich","beautifulsoup4", "watchfiles", "tomlkit", "textual", "httpx"]
+dependencies = ["sanic", "sanic-ext", "jinja2", "copier", "click", "rich","beautifulsoup4", "watchfiles", "tomlkit", "textual", "httpx"]
 
 
 [project.scripts]
@@ -39,13 +38,18 @@ Source = "https://github.com/unknown/sanic-kit"
 [tool.hatch.version]
 path = "src/sanic_kit/__about__.py"
 
+[tool.hatch.envs.docs]
+dependencies = [
+  "furo",
+  "sphinx",
+  "myst-parser",
+  "sphinx_copybutton",
+  "sphinx-autobuild",
+  ]
 [tool.hatch.envs.default]
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
-  "sphinx",
-  "furo",
-  "myst-parser"
 ]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"

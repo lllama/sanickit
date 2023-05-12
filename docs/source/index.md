@@ -1,4 +1,8 @@
-# Welcome to Sanic-Kit's documentation!
+# Sanic-Kit
+
+:::{image} logo.png
+:width: 250px
+:::
 
 <hr>
 
@@ -17,7 +21,9 @@ included (thanks to [Jinja2 Fragments](https://github.com/sponsfreixes/jinja2-fr
 To install Sanic-Kit, create a new virtual environment and install `sanic-kit` with:
 
 ```bash
-pip install sanic-kit
+python -m venv .venv
+. ./.venv/bin/activate
+python -m pip install sanic-kit
 ```
 
 This will install the `sk` command line tool. Create a new skeleton project with:
