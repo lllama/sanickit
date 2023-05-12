@@ -60,7 +60,7 @@ The files and folders serve the following purposes:
 - `index.html` - the base template for all pages.
 - `lib` - any code included here can be imported into handlers by importing from `.lib`. E.g. `from .lib.auth import my_auth_helper`
 - `middleware` - any code included here will be imported as middleware by the app.
-- `routes` - All file paths in this folder will be recreated as URLs in the app. 
+- `routes` - All file paths in this folder will be recreated as URLs in the app. See [routes](routes.md) for more info. 
    - `+page.sanic` - These files contain the handler code for `GET` requests and the page template.
    - `+layout.html` - a template that any routes in this folder or below will inherit from this template.
 - `server_setup.py` - Code for [server life-cycle events.](https://sanic.dev/en/guide/basics/listeners.html#attaching-a-listener)
@@ -68,11 +68,9 @@ The files and folders serve the following purposes:
    - `static/app.css` - Default CSS file.
 
 
-```{toctree}
-:maxdepth: 2
-```
-# Indices and tables
+:::{toctree} Table of Contents
+:hidden:
+:depth: 3
+routes
+:::
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
