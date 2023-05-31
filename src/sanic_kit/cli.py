@@ -179,7 +179,6 @@ def handle_page(src, route, templates, template_name):
 
     layout = find_nearest_layout(route)
     layout_name = str(layout).replace("[", "").replace("]", "")
-    (templates / template_name).write_text(f"""{{% extends "{layout_name}" %}}\n\n""" + html.prettify())
 
     parameters = [x[1:-1] for x in route.parts if x.startswith("[") and x.endswith("]")]
     route_url = (
@@ -203,6 +202,9 @@ def handle_page(src, route, templates, template_name):
         imports, python = extract_imports(python, name, template_name, parameters)
     else:
         imports, python = extract_imports("", name, template_name, parameters)
+
+    # Write our template
+    (templates / template_name).write_text(f"""{{% extends "{layout_name}" %}}\n\n""" + html.prettify())
     return (
         ENDPOINT_TEMPLATE.render(
             route=route_url,
