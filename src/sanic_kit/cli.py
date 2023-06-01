@@ -119,7 +119,7 @@ jinja_env = Environment(loader=BaseLoader())
 IMPORTS_TEMPLATE = jinja_env.from_string(
     """\
 {%- for import in imports -%}
-{{- import -}}
+{{- import }}
 {% endfor %}
 """
 )
@@ -127,6 +127,9 @@ ENDPOINT_TEMPLATE = jinja_env.from_string(
     """\
 
 @bp.{{method|lower}}("{{route}}", name="{{route_name}}")
+{%- if fragments %}
+@bp.{{method|lower}}("{{route}}{%- if route != '/' %}/{% endif %}<fragment:{{fragments}}>", name="{{route_name}}-fragments")
+{%- endif %}
 {{code}}
 
 """
@@ -203,14 +206,19 @@ def handle_page(src, route, templates, template_name):
     else:
         imports, python = extract_imports("", name, template_name, parameters)
 
+    fragments = jinja_env.from_string(html.prettify()).blocks.keys()
+    fragments_regex = f"({'|'.join(fragments)})"
+
     # Write our template
     (templates / template_name).write_text(f"""{{% extends "{layout_name}" %}}\n\n""" + html.prettify())
+
     return (
         ENDPOINT_TEMPLATE.render(
             route=route_url,
             route_name=route_name,
             method="get",
             template=template_name,
+            fragments=fragments_regex,
             code=python,
         ),
         imports,

@@ -1,6 +1,7 @@
 import ast
 import sys
 from dataclasses import dataclass
+from textwrap import dedent
 
 from rich import print
 from rich.markup import escape
@@ -78,8 +79,18 @@ class FunctionAdder(Extractor):
 
     def __init__(self, name, template_name, parameters, *args, **kwargs):
         super().__init__(name, template_name, parameters)
-        self.new_return = ast.parse(f"""return await render("{template_name}", context=locals())""")
+        self.new_return = ast.parse(
+            dedent(
+                f"""\
+                    if fragment:
+                        return html(await render_block_async(request.app.ext.environment, "{template_name}", fragment, **locals()))
+                    else:
+                        return await render("{template_name}", context=locals())"""
+            )
+        )
         self.template_name = template_name
+        self._extracted_imports.add("from sanic.response import html")
+        self._extracted_imports.add("from jinja2_fragments import render_block_async")
 
     def visit_Return(self, node):
         match node:
@@ -90,13 +101,11 @@ class FunctionAdder(Extractor):
                     keywords=[],
                 )
             ):
-                self._extracted_imports.add("from sanic.response import text")
-                self._extracted_imports.add("from jinja2_fragments import render_block_async")
                 return ast.parse(
                     f"""return text(await render_block_async(request.app.ext.environment, "{self.template_name}", "{fragment}", **locals()))"""
                 )
             case ast.Return(value=ast.Call(func=ast.Name(id="template"), args=[], keywords=[])):
-                return self.new_return
+                return ast.parse(f"""return await render("{self.template_name}", context=locals())""")
             case _:
                 return node
 
@@ -110,8 +119,8 @@ class FunctionAdder(Extractor):
                 posonlyargs=[],
                 defaults=[],
                 args=[ast.arg(arg="request")] + [ast.arg(arg=param) for param in self.parameters],
-                kwonlyargs=[ast.arg(arg="TEMPLATE")],
-                kw_defaults=[ast.Constant(value=self.template)],
+                kwonlyargs=[ast.arg(arg="fragment"), ast.arg(arg="TEMPLATE")],
+                kw_defaults=[ast.Constant(value=None), ast.Constant(value=self.template)],
             ),
         )
         wrapper.body = node.body
