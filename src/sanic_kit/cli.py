@@ -184,14 +184,6 @@ def handle_page(src, route, templates, template_name):
     layout_name = str(layout).replace("[", "").replace("]", "")
 
     parameters = [x[1:-1] for x in route.parts if x.startswith("[") and x.endswith("]")]
-    route_url = (
-        str(route.relative_to(src / "routes").parent)
-        .replace(os.sep, "/")
-        .replace(".", "/")
-        .replace("[", "<")
-        .replace("]", ">")
-    )
-
     name = route_name = (
         str(route.relative_to(src / "routes").parent)
         .replace(os.sep, "_")
@@ -203,7 +195,29 @@ def handle_page(src, route, templates, template_name):
         route_name = script.attrs.get("route-name", name)
         python = dedent(script.extract().text)
         imports, python = extract_imports(python, name, template_name, parameters)
+
+        url_parts = []
+        for part in route.relative_to(src / "routes").parent.parts:
+            if part.startswith("[") and part.endswith("]"):
+                param = part[1:-1]
+                if param_type := script.attrs.get(param):
+                    url_parts.append(f"<{param}:{param_type}>")
+                else:
+                    url_parts.append(f"<{param}>")
+            else:
+                url_parts.append(str(part))
+
+        route_url = "/".join(url_parts)
+
     else:
+        route_url = (
+            str(route.relative_to(src / "routes").parent)
+            .replace(os.sep, "/")
+            .replace(".", "/")
+            .replace("[", "<")
+            .replace("]", ">")
+        )
+
         imports, python = extract_imports("", name, template_name, parameters)
 
     fragments = jinja_env.from_string(html.prettify()).blocks.keys()
