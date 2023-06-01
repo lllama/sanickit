@@ -43,16 +43,18 @@ class RelativeInclude(Extension):
 
 # from .blueprints.app import bp as app_bp
 
-DEFAULT: Tuple[str, ...] = [
+DEFAULT: Tuple[str, ...] = (
     "app.blueprints.app",
     "app.middleware.htmx",
     # "app.middleware.request_context",
     # "app.middleware.redirect",
-]
+)
 
 
 def load_modules(path):
     for module in (Path(__file__).parent / path).glob("*.py"):
+        if module.stem == "__init__":
+            continue
         yield import_module(f"app.{path}.{module.stem}")
 
 
