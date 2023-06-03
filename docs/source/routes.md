@@ -121,12 +121,12 @@ By default, each layout inherits the layout above it. Sometimes that isn't what 
 
 `+server.js` files can be placed in the same directory as `+page` files, allowing the same route to be either a page or an API endpoint. To determine which, SvelteKit applies the following rules:
 
-*   `PUT`/`PATCH`/`DELETE`/`OPTIONS` requests are always handled by `+server.js` since they do not apply to pages
-*   `GET`/`POST` requests are treated as page requests if the `accept` header prioritises `text/html` (in other words, it's a browser page request), else they are handled by `+server.js`
+*   `POST / PUT`/`PATCH`/`DELETE`/`OPTIONS` requests are always handled by `+server.py`
+*   `GET` requests are treated as page requests
 
-Other files[permalink](https://kit.svelte.dev/#other-files)
------------------------------------------------------------
+### Other files
 
-Any other files inside a route directory are ignored by SvelteKit. This means you can colocate components and utility modules with the routes that need them.
+All other html files will be treated as jinja templates and can be used with the standard `import` and `include` tags.
+Any other `py` files can be used to include utility or other functions and can be included using relative imports. Any python code that is used in multiple routes should be put in the `lib` directory.
 
 If components and modules are needed by multiple routes, it's a good idea to put them in [`$lib`](https://kit.svelte.dev/modules#$lib).
