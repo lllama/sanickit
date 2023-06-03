@@ -128,5 +128,3 @@ By default, each layout inherits the layout above it. Sometimes that isn't what 
 
 All other html files will be treated as jinja templates and can be used with the standard `import` and `include` tags.
 Any other `py` files can be used to include utility or other functions and can be included using relative imports. Any python code that is used in multiple routes should be put in the `lib` directory.
-
-If components and modules are needed by multiple routes, it's a good idea to put them in [`$lib`](https://kit.svelte.dev/modules#$lib).

@@ -29,12 +29,12 @@ jobs:
       shell: bash
       run: |
         author_name="$(git show --format=%an -s)"
-        #author_email="$(git show --format=%ae -s)"
+        author_email="$(git show --format=%ae -s)"
         echo "::group::Set committer"
         echo "git config user.name $author_name"
         git config user.name $author_name
-        #echo "git config user.email $author_email"
-        #git config user.email $author_email
+        echo "git config user.email $author_email"
+        git config user.email $author_email
         echo "::endgroup::"
         
     - name: gh-pages branch creation if needed
