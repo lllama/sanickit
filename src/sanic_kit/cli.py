@@ -303,6 +303,14 @@ bp = Blueprint("app_blueprint")
                 match route.suffix:
                     case ".html":
                         shutil.copy(route, templates / route.parent.relative_to(src))
+                    case ".py" if route.relative_to(src).parts[0] == "routes":
+                        module_path_parts = [
+                            part.replace("[", "").replace("]", "")
+                            for part in route.relative_to(src / "routes").parent.parts
+                        ]
+                        module_path = (build / "blueprints").joinpath(*module_path_parts)
+                        module_path.mkdir(exist_ok=True, parents=True)
+                        shutil.copy(route, module_path / route.name)
 
     (build / "blueprints" / "app.py").write_text(IMPORTS_TEMPLATE.render(imports=all_imports) + app_blueprint)
 

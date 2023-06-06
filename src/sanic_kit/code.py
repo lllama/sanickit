@@ -35,6 +35,8 @@ class Extractor(ast.NodeTransformer):
         match node:
             case ast.ImportFrom(module="lib", names=names, level=1):
                 node = ast.ImportFrom(module="app.lib", names=names, level=0)
+            case ast.ImportFrom(module=module, names=names, level=1):
+                node = ast.ImportFrom(module=f"{self.name.replace('_', '.')}.{module}", names=names, level=1)
             case _:
                 ...
         self._extracted_imports.add(ast.unparse(node))
