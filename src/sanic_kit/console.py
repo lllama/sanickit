@@ -98,7 +98,6 @@ class Config(Widget):
         "HTMX": "htmx.org",
         "Hyperscript": "hyperscript.org",
         "AlpineJs": "alpinejs",
-        "Petite-Vue": "petite-vue",
     }
 
     def compose(self):
