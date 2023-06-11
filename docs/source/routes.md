@@ -6,9 +6,7 @@ Sanic-kit copies SvelteKit’s is _filesystem-based router_. The paths of your 
 *   `src/routes/about` creates an `/about`route
 *   `src/routes/blog/[slug]` creates a route with a _parameter_, `slug`, that can be used to load data dynamically when a user requests a page like `/blog/hello-world`
 
-> You can change `src/routes` to a different directory by editing the [project config](https://kit.svelte.dev/configuration).
-
-Each route directory contains one or more _route files_, which can be identified by their `+`prefix.
+Each route directory contains one or more _route files_, which can be identified by their `+` prefix.
 
 ## +page.sanic
 
@@ -60,36 +58,38 @@ The above code will then handle any POST requests sent to the application.
 
 So far, we've treated pages as entirely standalone components — upon navigation, the existing `+page.svelte` component will be destroyed, and a new one will take its place.
 
-But in many apps, there are elements that should be visible on _every_ page, such as top-level navigation or a footer. Instead of repeating them in every `+page.svelte`, we can put them in _layouts_.
+But in many apps, there are elements that should be visible on _every_ page, such as top-level navigation or a footer. Instead of repeating them in every `+page.sanic`, we can put them in _layouts_.
 
 ### +layout.html
 
 To create a layout that applies to every page, make a file called `src/routes/+layout.html`. The default layout that Sanic-Kit uses is:
 
 
-...but we can add whatever markup, styles and behaviour we want. The only requirement is that the component includes a `<slot>` for the page content. For example, let's add a nav bar:
+...but we can add whatever markup, styles and behaviour we want. The only requirement is that the component includes a `{% block … %}` for the page content. For example, let's add a nav bar:
 
 src/routes/+layout.sanic 
 
-    <nav>
-        <a href="/">Home</a>
-        <a href="/about">About</a>
-        <a href="/settings">Settings</a>
-    </nav>
-    
-    <slot></slot>
+```html
+<nav>
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+    <a href="/settings">Settings</a>
+</nav>
 
+{% block main %}
+{% endblock %}
+```
 If we create pages for `/`, `/about` and `/settings`...
 
-src/routes/+page.svelte
+src/routes/+page.sanic
 
     <h1>Home</h1>
 
-src/routes/about/+page.svelte
+src/routes/about/+page.sanic
 
     <h1>About</h1>
 
-src/routes/settings/+page.svelte
+src/routes/settings/+page.sanic
 
     <h1>Settings</h1>
 
@@ -99,27 +99,26 @@ Layouts can be _nested_. Suppose we don't just have a single `/settings` page
 
 We can create a layout that only applies to pages below `/settings` (while inheriting the root layout with the top-level nav):
 
-src/routes/settings/+layout.svelte
+src/routes/settings/+layout.html
 
-    <script>
-        /** @type {import('./$types').LayoutData} */    export let data;
-    </script>
-    
-    <h1>Settings</h1>
-    
-    <div class="submenu">
-        {#each data.sections as section}
-            <a href="/settings/{section.slug}">{section.title}</a>
-        {/each}
-    </div>
-    
-    <slot></slot>
+```html
+<h1>Settings</h1>
 
-By default, each layout inherits the layout above it. Sometimes that isn't what you want - in this case, [advanced layouts](https://kit.svelte.dev/advanced-routing#advanced-layouts) can help you.
+<div class="submenu">
+    {% for section in data.sections %}
+        <a href="/settings/{{section.slug}}">{{section.title}}</a>
+    {% endfor %}
+</div>
+
+{% block subpage %}
+{% endblock %}
+```
+
+By default, each layout inherits the layout above it.
 
 ### Content negotiation
 
-`+server.js` files can be placed in the same directory as `+page` files, allowing the same route to be either a page or an API endpoint. To determine which, SvelteKit applies the following rules:
+`+server.py` files can be placed in the same directory as `+page` files, allowing the same route to be either a page or an API endpoint. To determine which, SanicKit applies the following rules:
 
 *   `POST / PUT`/`PATCH`/`DELETE`/`OPTIONS` requests are always handled by `+server.py`
 *   `GET` requests are treated as page requests
@@ -127,4 +126,5 @@ By default, each layout inherits the layout above it. Sometimes that isn't what 
 ### Other files
 
 All other html files will be treated as jinja templates and can be used with the standard `import` and `include` tags.
+
 Any other `py` files can be used to include utility or other functions and can be included using relative imports. Any python code that is used in multiple routes should be put in the `lib` directory.

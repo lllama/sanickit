@@ -6,15 +6,11 @@
 
 <hr>
 
-Sanic-Kit adds file-path routing to [Sanic](https://sanic.dev/), inspired by
-[Svelte Kit](http://kit.svelte.dev). The handler and template code are both
-included in the same `.sanic` file, to help promote [Locality of
+Sanic-Kit adds file-path routing to [Sanic](https://sanic.dev/), inspired by [Svelte Kit](http://kit.svelte.dev). The handler and template code are both included in the same `.sanic` file, to help promote [Locality of
 Behvaiour](https://htmx.org/essays/locality-of-behaviour/). 
 
 Support for [HTMX](http://htmx.org) is built in. In particular, middleware is
-included to help handle HTMX requests and responses. Support for
-[template fragments](https://htmx.org/essays/template-fragments/) is also
-included (thanks to [Jinja2 Fragments](https://github.com/sponsfreixes/jinja2-fragments)). 
+included to help handle HTMX requests and responses. Support for [template fragments](https://htmx.org/essays/template-fragments/) is also included (thanks to [Jinja2 Fragments](https://github.com/sponsfreixes/jinja2-fragments)). 
 
 ## Installation
 
@@ -72,5 +68,6 @@ The files and folders serve the following purposes:
 :hidden:
 :depth: 3
 routes
+handlers
 :::
 
