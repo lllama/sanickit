@@ -16,6 +16,7 @@ from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import (Button, Checkbox, DirectoryTree, Footer, Header,
                              Input, Label, TabbedContent, TextLog)
+from textual.widgets._directory_tree import DirEntry
 from watchfiles import awatch
 
 from .cli import _build as build_app
@@ -246,7 +247,7 @@ class Routes(Widget):
         textlog.write(Path(node.path).read_text())
 
     def on_tree_node_highlighted(self, event):
-        if not event.node.data.is_dir:
+        if not event.node.data.path.is_dir():
             self.update_preview(event.node.data)
 
     def on_directory_tree_file_selected(self, event):
@@ -273,7 +274,7 @@ class Routes(Widget):
         current_path = Path(self.root)
         for part in path_parts:
             node = [n for n in node.children if Path(n.data.path) == current_path / part][0]
-            if node.data.is_dir:
+            if node.data.path.is_dir():
                 tree.load_directory(node)
             else:
                 tree.select_node(node)
@@ -307,7 +308,7 @@ class SanicKit(App):
 
     async def action_edit_route(self):
         tree = self.query_one(DirectoryTree)
-        if not (file := tree.cursor_node.data).is_dir:
+        if not (file := tree.cursor_node.data).path.is_dir():
             self.log(f"editing file {file.path}")
             with self.suspend():
                 process = await asyncio.subprocess.create_subprocess_exec(
