@@ -14,7 +14,7 @@ from textwrap import dedent
 import click
 import httpx
 from bs4 import BeautifulSoup as BS
-from copier import run_auto
+from copier import run_copy
 from jinja2 import BaseLoader, Environment
 from rich import print
 from rich.markup import escape
@@ -44,11 +44,13 @@ def get_config():
 
     pyproject = loads(Path("pyproject.toml").read_text())
 
+    sk_config = pyproject.get("sanic-kit", {})
+
     config = Config(
         project=pyproject["project"]["name"],
-        unpkgs=list(pyproject["sanic-kit"].get("unpkgs", [])),
-        stylesheets=list(pyproject["sanic-kit"].get("stylesheets", [])),
-        tailwind=pyproject["sanic-kit"].get("tailwind", False),
+        unpkgs=list(sk_config.get("unpkgs", [])),
+        stylesheets=list(sk_config.get("stylesheets", [])),
+        tailwind=sk_config.get("tailwind", False),
     )
 
     return config
@@ -58,13 +60,9 @@ def get_config():
 @click.pass_context
 @click.argument("path", type=click.Path(file_okay=False, path_type=Path))
 def new(ctx, path: Path):
-    if path.exists():
-        print("[red]Path already exists")
-        ctx.exit()
-
     print(f"[green]Creating app in [yellow]{path}")
 
-    run_auto(str(Path(__file__).parent.parent.parent / "templates" / "default"), path, data={"project": path.stem})
+    run_copy(str(Path(__file__).parent.parent.parent / "templates" / "default"), path, data={"project": path.stem})
 
     Path("./.sanic-kit").mkdir()
     with open(Path("./.sanic-kit") / "tailwindcss", "wb") as f:
