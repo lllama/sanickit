@@ -371,5 +371,13 @@ def console():
     SanicKit().run()
 
 
+@cli.command
+@click.argument("template")
+def template(template):
+    if not Path("src/routes").exists():
+        print("[red]Templates need to be applied from the project root")
+    run_copy(template, ".")
+
+
 if __name__ == "__main__":
     cli()
