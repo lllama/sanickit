@@ -62,9 +62,10 @@ def get_config():
 def new(ctx, path: Path):
     print(f"[green]Creating app in [yellow]{path}")
 
-    run_copy(str(Path(__file__).parent.parent.parent / "templates" / "default"), path, data={"project": path.stem})
+    template = Path(__file__).parent / "template" / "default"
+    run_copy(str(template), path, data={"project": path.stem})
 
-    Path("./.sanic-kit").mkdir()
+    Path("./.sanic-kit").mkdir(exist_ok=True)
     with open(Path("./.sanic-kit") / "tailwindcss", "wb") as f:
         architecture = platform.machine()
         operating_system = platform.system().lower()
