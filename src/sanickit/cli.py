@@ -40,12 +40,18 @@ def cli(ctx):
 
 
 def get_config():
-    if not Path("pyproject.toml").exists():
-        raise Exception("Need a pyproject.toml")
+    if Path("pyproject.toml").exists():
+        pyproject = loads(Path("pyproject.toml").read_text())
+    elif Path("sanickit.toml").exists():
+        pyproject = loads(Path("sanickit.toml").read_text())
+    else:
+        Path("sanickit.toml").touch()
+        pyproject = {}
+        pyproject["project"] = {}
+        pyproject["project"]["name"] = Path(".").absolute().stem
+        Path("sanickit.toml").write_text(tomlkit.dumps(pyproject))
 
-    pyproject = loads(Path("pyproject.toml").read_text())
-
-    sk_config = pyproject.get("sanic-kit", {})
+    sk_config = pyproject.get("sanickit", {})
 
     config = Config(
         project=pyproject["project"]["name"],
