@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sanic-kit"
+name = "sanickit"
 dynamic = ["version"]
-description = 'A web framework that applies some of the idea of SvelteKit to Sanic'
+description = 'A web framework that applies some of the ideas of SvelteKit to Sanic'
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -28,15 +28,15 @@ dependencies = ["sanic", "sanic-ext", "jinja2", "copier", "click", "rich", "beau
 
 
 [project.scripts]
-sk = "sanic_kit.cli:cli"
+sk = "sanickit.cli:cli"
 
 [project.urls]
-Documentation = "https://github.com/unknown/sanic-kit#readme"
-Issues = "https://github.com/unknown/sanic-kit/issues"
-Source = "https://github.com/unknown/sanic-kit"
+Documentation = "https://github.com/lllama/sanickit#readme"
+Issues = "https://github.com/lllama/sanickit/issues"
+Source = "https://github.com/lllama/sanickit"
 
 [tool.hatch.version]
-path = "src/sanic_kit/__about__.py"
+path = "src/sanickit/__about__.py"
 
 [tool.hatch.envs.docs]
 detached = true
@@ -76,7 +76,7 @@ dependencies = [
   "ruff>=0.0.243",
 ]
 [tool.hatch.envs.lint.scripts]
-typing = "mypy --install-types --non-interactive {args:src/sanic_kit tests}"
+typing = "mypy --install-types --non-interactive {args:src/sanickit tests}"
 style = [
   "ruff {args:.}",
   "black --check --diff {args:.}",
@@ -141,7 +141,7 @@ unfixable = [
 ]
 
 [tool.ruff.isort]
-known-first-party = ["sanic_kit"]
+known-first-party = ["sanickit"]
 
 [tool.ruff.flake8-tidy-imports]
 ban-relative-imports = "all"
@@ -151,16 +151,16 @@ ban-relative-imports = "all"
 "tests/**/*" = ["PLR2004", "S101", "TID252"]
 
 [tool.coverage.run]
-source_pkgs = ["sanic_kit", "tests"]
+source_pkgs = ["sanickit", "tests"]
 branch = true
 parallel = true
 omit = [
-  "src/sanic_kit/__about__.py",
+  "src/sanickit/__about__.py",
 ]
 
 [tool.coverage.paths]
-sanic_kit = ["src/sanic_kit", "*/sanic-kit/src/sanic_kit"]
-tests = ["tests", "*/sanic-kit/tests"]
+sanickit = ["src/sanickit", "*/sanickit/src/sanickit"]
+tests = ["tests", "*/sanickit/tests"]
 
 [tool.coverage.report]
 exclude_lines = [

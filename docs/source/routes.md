@@ -1,6 +1,6 @@
 # Routing
 
-Sanic-kit copies SvelteKit’s is _filesystem-based router_. The paths of your codebase define the routes of your app:
+SanicKit copies SvelteKit’s is _filesystem-based router_. The paths of your codebase define the routes of your app:
 
 *   `src/routes` is the root route
 *   `src/routes/about` creates an `/about`route
@@ -62,7 +62,7 @@ But in many apps, there are elements that should be visible on _every_ page, s
 
 ### +layout.html
 
-To create a layout that applies to every page, make a file called `src/routes/+layout.html`. The default layout that Sanic-Kit uses is:
+To create a layout that applies to every page, make a file called `src/routes/+layout.html`. The default layout that SanicKit uses is:
 
 
 ...but we can add whatever markup, styles and behaviour we want. The only requirement is that the component includes a `{% block … %}` for the page content. For example, let's add a nav bar:

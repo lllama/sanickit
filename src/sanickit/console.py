@@ -87,8 +87,8 @@ class Config(Widget):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.unpkg_config = config["sanic-kit"].get("unpkgs", [])
-        self.stylesheets_config = config["sanic-kit"].get("stylesheets", [])
+        self.unpkg_config = config["sanickit"].get("unpkgs", [])
+        self.stylesheets_config = config["sanickit"].get("stylesheets", [])
 
     STYLESHEETS = {
         "classless": "https://classless.de/classless.css",
@@ -110,7 +110,7 @@ class Config(Widget):
         for css, value in self.STYLESHEETS.items():
             yield Checkbox(css, value=value in self.stylesheets_config)
 
-        yield Checkbox("Tailwind", value=self.config["sanic-kit"].get("tailwind"))
+        yield Checkbox("Tailwind", value=self.config["sanickit"].get("tailwind"))
 
     def on_checkbox_changed(self, event: Checkbox.Changed):
         label = str(event.checkbox.label)
@@ -181,14 +181,14 @@ class Server(Widget):
 
         self.tailwind_process = process = subprocess.Popen(
             [
-                "./.sanic-kit/tailwindcss",
+                "./.sanickit/tailwindcss",
                 "--poll",
                 "--watch",
                 "./src",
                 "--output",
                 "./build/app/static/tailwind.css",
                 "--config",
-                "./.sanic-kit/tailwind.config.js",
+                "./.sanickit/tailwind.config.js",
             ],
             stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL,
@@ -320,14 +320,14 @@ class SanicKit(App):
     async def on_load(self):
         if (pyproj := Path("pyproject.toml")).exists():
             self.config = tomlkit.parse(pyproj.read_text())
-            if "sanic-kit" not in self.config:
-                self.config["sanic-kit"] = tomlkit.table()
+            if "sanickit" not in self.config:
+                self.config["sanickit"] = tomlkit.table()
         else:
             print("[yellow]pyproject.toml[/yellow] [red]not found")
             await self.action_quit()
 
     def add_to_list(self, list_name, item):
-        sk_table = self.config["sanic-kit"]
+        sk_table = self.config["sanickit"]
         if list_name not in sk_table:
             sk_table.add(list_name, [item])
         elif item not in sk_table[list_name]:
@@ -335,7 +335,7 @@ class SanicKit(App):
         self.save_config()
 
     def remove_from_list(self, list_name, item):
-        sk_table = self.config["sanic-kit"]
+        sk_table = self.config["sanickit"]
         if list_name in sk_table and item in sk_table[list_name]:
             sk_table[list_name].remove(item)
         self.save_config()
@@ -357,7 +357,7 @@ class SanicKit(App):
         self.remove_from_list("stylesheets", stylesheet)
 
     def on_config_toggle_tailwind(self, message):
-        self.config["sanic-kit"]["tailwind"] = message.value
+        self.config["sanickit"]["tailwind"] = message.value
         self.save_config()
 
     def save_config(self):

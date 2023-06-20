@@ -1,9 +1,9 @@
-# sanic-kit
+# SanicKit
 
-[![PyPI - Version](https://img.shields.io/pypi/v/sanic-kit.svg)](https://pypi.org/project/sanic-kit)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sanic-kit.svg)](https://pypi.org/project/sanic-kit)
+[![PyPI - Version](https://img.shields.io/pypi/v/sanickit.svg)](https://pypi.org/project/sanickit)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sanickit.svg)](https://pypi.org/project/sanickit)
 
-Sanic-kit is a framework that applies some of the ideas of Svelte-kit to the Sanic web framework. In particular:
+SanicKit is a framework that applies some of the ideas of Svelte-kit to the Sanic web framework. In particular:
 
 * File-path routing
 * Easy deployment
@@ -21,9 +21,9 @@ can be used to create a more SPA-like experience.
 ## Installation
 
 ```console
-pip install sanic-kit
+pip install sanickit
 ```
 
 ## License
 
-`sanic-kit` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+`SanicKit` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.

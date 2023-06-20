@@ -13,6 +13,7 @@ from textwrap import dedent
 
 import click
 import httpx
+import tomlkit
 from bs4 import BeautifulSoup as BS
 from copier import run_copy
 from jinja2 import BaseLoader, Environment
@@ -65,8 +66,8 @@ def new(ctx, path: Path):
     template = Path(__file__).parent / "template" / "default"
     run_copy(str(template), path, data={"project": path.stem})
 
-    Path("./.sanic-kit").mkdir(exist_ok=True)
-    with open(Path("./.sanic-kit") / "tailwindcss", "wb") as f:
+    Path("./.sanickit").mkdir(exist_ok=True)
+    with open(Path("./.sanickit") / "tailwindcss", "wb") as f:
         architecture = platform.machine()
         operating_system = platform.system().lower()
         operating_system = "macos" if operating_system == "darwin" else operating_system
@@ -83,10 +84,10 @@ def new(ctx, path: Path):
 
 
 def download_tailwind():
-    Path("./.sanic-kit").mkdir(exist_ok=True)
+    Path("./.sanickit").mkdir(exist_ok=True)
 
-    tailwind_executable = Path("./.sanic-kit") / "tailwindcss"
-    tailwind_config = Path("./.sanic-kit") / "tailwind.config.js"
+    tailwind_executable = Path("./.sanickit") / "tailwindcss"
+    tailwind_config = Path("./.sanickit") / "tailwind.config.js"
     if not tailwind_executable.exists():
         with open(tailwind_executable, "wb") as f:
             response = httpx.get(
@@ -262,7 +263,7 @@ def _build(restart=False, quiet=False):
     templates.mkdir(exist_ok=True)
 
     # Make the server
-    shutil.copy(find_spec("sanic_kit.template.server").origin, build / "server.py")
+    shutil.copy(find_spec("sanickit.template.server").origin, build / "server.py")
 
     app_blueprint = """
 from sanic import Blueprint
@@ -342,13 +343,13 @@ def run():
 
     tailwind_process = subprocess.Popen(
         [
-            "./.sanic-kit/tailwindcss",
+            "./.sanickit/tailwindcss",
             "--watch",
             "./src",
             "--output",
             "./build/app/static/tailwind.css",
             "--config",
-            "./.sanic-kit/tailwind.config.js",
+            "./.sanickit/tailwind.config.js",
         ]
     )
     file_watcher = Process(target=watch_files)
@@ -376,7 +377,7 @@ def console():
 def template(template):
     if not Path("src/routes").exists():
         print("[red]Templates need to be applied from the project root")
-    run_copy(template, ".")
+    run_copy(template, ".", quiet=False)
 
 
 if __name__ == "__main__":

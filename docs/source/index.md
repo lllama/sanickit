@@ -1,4 +1,4 @@
-# Sanic-Kit
+# SanicKit
 
 :::{image} logo.png
 :width: 250px
@@ -6,7 +6,7 @@
 
 <hr>
 
-Sanic-Kit adds file-path routing to [Sanic](https://sanic.dev/), inspired by [Svelte Kit](http://kit.svelte.dev). The handler and template code are both included in the same `.sanic` file, to help promote [Locality of
+SanicKit adds file-path routing to [Sanic](https://sanic.dev/), inspired by [Svelte Kit](http://kit.svelte.dev). The handler and template code are both included in the same `.sanic` file, to help promote [Locality of
 Behvaiour](https://htmx.org/essays/locality-of-behaviour/). 
 
 Support for [HTMX](http://htmx.org) is built in. In particular, middleware is
@@ -14,12 +14,12 @@ included to help handle HTMX requests and responses. Support for [template fragm
 
 ## Installation
 
-To install Sanic-Kit, create a new virtual environment and install `sanic-kit` with:
+To install SanicKit, create a new virtual environment and install `sanickit` with:
 
 ```bash
 python -m venv .venv
 . ./.venv/bin/activate
-python -m pip install sanic-kit
+python -m pip install sanickit
 ```
 
 This will install the `sk` command line tool. Create a new skeleton project with:
@@ -69,5 +69,6 @@ The files and folders serve the following purposes:
 :depth: 3
 routes
 handlers
+templates
 :::
 
