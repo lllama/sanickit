@@ -78,10 +78,14 @@ def new(ctx, path: Path):
         operating_system = platform.system().lower()
         operating_system = "macos" if operating_system == "darwin" else operating_system
 
-        response = httpx.get(
-            f"https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-{operating_system}-{architecture}"
-        )
-        f.write(response.content)
+        print("Downloading tailwindcli")
+        with httpx.stream(
+            "GET",
+            f"https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-{operating_system}-{architecture}",
+            follow_redirects=True,
+        ) as r:
+            for data in r.iter_bytes():
+                f.write(data)
 
     for route in path.glob("**/.gitkeep"):
         route.unlink()
