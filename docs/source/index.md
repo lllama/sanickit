@@ -70,5 +70,6 @@ The files and folders serve the following purposes:
 routes
 handlers
 templates
+logos
 :::
 
