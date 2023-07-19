@@ -27,6 +27,8 @@ src/routes/about/+page.sanic
 <a href="/">Home</a>
 ```
 
+### Path parameters
+
 src/routes/blog/\[slug\]/+page.sanic
 
 Sometimes you will need to load some data to include in your template. Here the path contains the `[slug]` component which will be passed into your handler code. The handler code itself is included in a `<handler>` tag as shown below:
@@ -43,18 +45,33 @@ entry = some_orm.get(slug)
 
 Any variables defined in your handler code will be passed to your template as part of the context. Here we defined the `entry` variable which we use to get at the blog entry’s `title` and `content` attributes. 
 
+### Fragment Routes
+
+The Jinja template for a page can contain `{% block %}` tags. When used in a `+page.sanic` file, these are treated as [template fragments](https://htmx.org/essays/template-fragments/), and URLs are created for each of the fragments (these are the normal URL with `/<fragment name>` added to the end). When these URLs are accessed instead of the normal URL, then only the fragment will be returned to the client. You can use the [`fragment()`](#fragment-helper) function to return early if needed.
+
+```html
+<handler>
+import some_orm
+entry = some_orm.get(slug)
+</handler>
+    
+{% block entryDetails %}
+<h1>{{entry.title}}</h1>
+<div>{{entry.content}}</div>
+{% endblock %}
+```
 ## +server.py 
 
-The +page.sanic file handles any GET requests made to the server. To handle other HTTP methods, create a server.py file and add functions named after the method you want to handle. E.g.
+The +page.sanic file handles any GET requests made to the server. To handle other HTTP methods, create a `+server.py` file and add functions named after the method you want to handle. E.g.
 
 ```python
 async def POST(request):
    ...
 ```
 
-The above code will then handle any POST requests sent to the application. 
+The above code will then handle any POST requests sent to the URL. 
 
-## +layout
+## Layout
 
 So far, we've treated pages as entirely standalone components — upon navigation, the existing `+page.svelte` component will be destroyed, and a new one will take its place.
 

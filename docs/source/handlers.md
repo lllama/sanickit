@@ -33,6 +33,7 @@ If you want to return a template fragment then you can use the `fragment` helper
 
 Returns the current template and passes the current value of `locals()` as its context. 
 
+(fragment-helper)=
 ###  `fragment`
 
 The first parameter is a block name that will be returned instead of the full template. The current value of `locals()` is passed as its context. 
