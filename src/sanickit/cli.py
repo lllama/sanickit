@@ -351,9 +351,14 @@ def run():
 
     download_tailwind()
 
+    tailwind: str
+    if Path("./.sanickit/tailwindcss.exe").exists():
+        tailwind = "./.sanickit/tailwindcss.exe"
+    else:
+        tailwind = "./.sanickit/tailwindcss"
     tailwind_process = subprocess.Popen(
         [
-            "./.sanickit/tailwindcss",
+            tailwind,
             "--watch",
             "./src",
             "--output",
