@@ -191,7 +191,7 @@ def handle_page(src, route, templates, template_name):
     html = BS(route.read_text(), "html.parser")
 
     layout = find_nearest_layout(route)
-    layout_name = str(layout).replace("[", "").replace("]", "")
+    layout_name = str(layout.as_posix()).replace("[", "").replace("]", "")
 
     parameters = [x[1:-1] for x in route.parts if x.startswith("[") and x.endswith("]")]
     name = route_name = (
@@ -288,7 +288,7 @@ bp = Blueprint("app_blueprint")
     for route in src.glob("**/*"):
         if not quiet:
             print(f"[green]Processing: [yellow]{escape(str(route))}")
-        template_name = f"{str(route.with_suffix('').relative_to(src))}.html"
+        template_name = f"{str(route.with_suffix('').relative_to(src).as_posix())}.html"
         if (path := route.parent.relative_to(src)) not in [Path("middleware")]:
             (templates / path).mkdir(exist_ok=True, parents=True)
         # Create our template
