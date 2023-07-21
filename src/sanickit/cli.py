@@ -73,19 +73,6 @@ def new(ctx, path: Path):
     run_copy(str(template), path, data={"project": path.stem})
 
     Path("./.sanickit").mkdir(exist_ok=True)
-    with open(Path("./.sanickit") / "tailwindcss", "wb") as f:
-        architecture = platform.machine()
-        operating_system = platform.system().lower()
-        operating_system = "macos" if operating_system == "darwin" else operating_system
-
-        print("Downloading tailwindcli")
-        with httpx.stream(
-            "GET",
-            f"https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-{operating_system}-{architecture}",
-            follow_redirects=True,
-        ) as r:
-            for data in r.iter_bytes():
-                f.write(data)
 
     for route in path.glob("**/.gitkeep"):
         route.unlink()
@@ -93,19 +80,47 @@ def new(ctx, path: Path):
     download_tailwind()
 
 
+def get_os_and_arch():
+    os_name = platform.system().lower()
+    machine_arch = platform.machine().lower()
+    if os_name == "darwin":
+        if machine_arch == "arm64":
+            return "macos-arm64"
+        elif machine_arch == "x86_64":
+            return "macos-x64"
+    elif os_name == "windows":
+        if machine_arch == "arm64":
+            return "windows-arm64.exe"
+        elif machine_arch == "amd64":
+            return "windows-x64.exe"
+    elif os_name == "linux":
+        if machine_arch == "aarch64":
+            return "linux-arm64"
+        elif machine_arch == "armv7l":
+            return "linux-armv7"
+        elif machine_arch == "x86_64":
+            return "linux-x64"
+    return None
+
 def download_tailwind():
+    os_arch = get_os_and_arch()
+    if os_arch is None:
+        print("Unsupported OS or architecture.")
+        return
+
+    tailwind_url = f"https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-{os_arch}"
+    
     Path("./.sanickit").mkdir(exist_ok=True)
 
     tailwind_executable = Path("./.sanickit") / "tailwindcss"
     tailwind_config = Path("./.sanickit") / "tailwind.config.js"
+
     if not tailwind_executable.exists():
         with open(tailwind_executable, "wb") as f:
-            response = httpx.get(
-                "https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-macos-arm64",
-                follow_redirects=True,
-            )
+            response = httpx.get(tailwind_url, follow_redirects=True)
             f.write(response.content)
         tailwind_executable.chmod(stat.S_IEXEC | stat.S_IREAD | stat.S_IWRITE)
+
     if not tailwind_config.exists():
         tailwind_config.write_text(
             dedent(
